@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>和弦級數練習（大調）</title>
+<style>
+  :root{
+    --bg:#0f1220; --panel:#151933; --ink:#e8ecff; --muted:#aab0d6; --accent:#6ea8ff;
+    --ok:#2ecc71; --bad:#ff6b6b; --btn:#20264d; --btn-hover:#28306a; --chip:#1c2145; --border:#2a2f58;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; font-family: ui-sans-serif,-apple-system,"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,Arial,sans-serif;
+    background: radial-gradient(1200px 600px at 80% -10%, #1a1f45 0%, #0f1220 60%);
+    color:var(--ink);
+    padding-bottom:92px; /* 讓內容不被底部控制列遮住 */
+  }
+  .wrap{max-width:1100px; margin:32px auto; padding:0 16px}
+  header{display:flex; gap:16px; align-items:center; margin-bottom:16px}
+  h1{font-size:22px; margin:0}
+  .badge{font-size:12px; padding:4px 8px; border-radius:999px; background:var(--chip); color:var(--muted); border:1px solid var(--border)}
+  .panel{
+    background:linear-gradient(180deg, rgba(255,255,255,0.03), rgba(0,0,0,0.05)), var(--panel);
+    border:1px solid var(--border); border-radius:16px; padding:16px; margin-bottom:14px
+  }
+  .grid{display:grid; gap:12px}
+  @media (min-width:900px){ .grid-2{grid-template-columns: 1fr 1fr} }
+  label{font-size:13px; color:var(--muted)}
+  select, .seg, button, .check, input[type="number"]{
+    background:var(--btn); color:var(--ink); border:1px solid var(--border); border-radius:10px; padding:10px 12px; font-size:15px
+  }
+  input[type="number"]{width:90px}
+  .check{display:flex; gap:8px; align-items:center; padding:8px 12px}
+  select:focus, button:focus, input[type="number"]:focus{outline:2px solid var(--accent)}
+  .seg{display:inline-flex; gap:6px; padding:6px; align-items:center}
+  .seg input{display:none}
+  .seg label{
+    color:var(--ink); background:transparent; border:1px solid var(--border);
+    padding:8px 12px; border-radius:8px; cursor:pointer; user-select:none
+  }
+  .seg input:checked + label{background:var(--accent); border-color:transparent; color:#0c1226; font-weight:700}
+  .row{display:flex; gap:12px; flex-wrap:wrap; align-items:center}
+  .grow{flex:1}
+  .kbd{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-size:12px; color:var(--muted);
+        border:1px solid var(--border); padding:3px 6px; border-radius:6px; background:var(--chip)}
+  .question{
+    display:flex; align-items:center; justify-content:space-between; gap:12px; min-height:64px;
+    border:1px dashed var(--border); border-radius:12px; padding:12px; background:rgba(255,255,255,0.02)
+  }
+  .q-title{font-size:18px; line-height:1.3}
+  .q-meta{color:var(--muted); font-size:13px}
+  .big{font-size:28px; font-weight:800; letter-spacing:0.5px}
+  .choices{display:grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap:10px; margin-top:12px}
+  @media (min-width:680px){ .choices{grid-template-columns: repeat(4, minmax(0,1fr));} }
+  .choice{
+    padding:12px; background:var(--btn); border:1px solid var(--border); border-radius:10px; cursor:pointer; text-align:center;
+    transition:transform .06s ease, background .15s ease; position:relative
+  }
+  .choice:hover{background:var(--btn-hover); transform:translateY(-1px)}
+  .choice.correct{background:rgba(46, 204, 113, .15); border-color:rgba(46, 204, 113, .4)}
+  .choice.wrong{background:rgba(255,107,107,.2); border-color:rgba(255,107,107,.5)}
+  .idxHint{ position:absolute; top:6px; left:8px; font-size:11px; opacity:.7}
+  .result{display:flex; align-items:center; gap:10px; font-size:15px; margin-top:8px}
+  .dot{width:10px; height:10px; border-radius:50%}
+  .dot.ok{background:var(--ok)} .dot.bad{background:var(--bad)}
+  .score{display:flex; gap:10px; flex-wrap:wrap; font-size:14px; color:var(--muted)}
+  .score strong{color:var(--ink)}
+  .list{display:flex; flex-wrap:wrap; gap:8px; margin-top:8px}
+  .chip{padding:6px 10px; border-radius:999px; background:var(--chip); border:1px solid var(--border); font-size:13px}
+  .muted{color:var(--muted)}
+  details summary{cursor:pointer; user-select:none; color:var(--muted)}
+  .footer{color:var(--muted); font-size:12px; margin-top:12px}
+
+  /* 計時器顯示 */
+  .timer{ margin-top:10px; }
+  .tline{ height:10px; border-radius:999px; background:#22284d; border:1px solid var(--border); overflow:hidden }
+  .tbar{ height:100%; background:var(--accent); width:0% }
+  .tmeta{display:flex; justify-content:space-between; font-size:12px; color:var(--muted); margin-top:6px}
+
+  /* 底部固定控制列 */
+  .dock{
+    position:fixed; left:0; right:0; bottom:0; z-index:50;
+    background:rgba(21,25,51,.88); backdrop-filter: blur(10px);
+    border-top:1px solid var(--border);
+  }
+  .dock-inner{
+    max-width:1100px; margin:0 auto; padding:10px 16px; display:flex; gap:12px; align-items:center; flex-wrap:wrap
+  }
+  .btn{padding:10px 14px; border-radius:10px; border:1px solid var(--border); background:var(--btn); color:var(--ink); cursor:pointer}
+  .btn.primary{background:var(--accent); border-color:transparent; color:#0c1226; font-weight:800}
+  .btn.ghost{background:transparent}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>和弦級數練習（大調）</h1>
+      <span class="badge">I ii iii IV V vi vii°</span>
+      <span class="badge">立即判斷</span>
+      <span class="badge">鍵盤 1–7 依畫面順序</span>
+    </header>
+
+    <div class="panel grid grid-2" id="controls">
+      <div class="grid">
+        <div>
+          <label>練習模式</label><br/>
+          <div class="seg" role="tablist" aria-label="練習模式">
+            <input type="radio" name="mode" id="m1" value="chordToDegree" checked />
+            <label for="m1">和弦 ➜ 級數</label>
+            <input type="radio" name="mode" id="m2" value="degreeToChord" />
+            <label for="m2">級數 ➜ 和弦</label>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="grow">
+            <label for="root">主音（Key Root）</label>
+            <select id="root">
+              <option>C</option><option>C#</option><option>D</option><option>Eb</option>
+              <option>E</option><option>F</option><option>F#</option><option>G</option>
+              <option>Ab</option><option>A</option><option>Bb</option><option>B</option>
+            </select>
+          </div>
+
+          <div class="grow">
+            <label>出題方式</label><br/>
+            <div class="seg">
+              <input type="radio" name="keymode" id="kfix" value="fixed" checked />
+              <label for="kfix">固定調性</label>
+              <input type="radio" name="keymode" id="krand" value="random" />
+              <label for="krand">每題隨機調性</label>
+            </div>
+          </div>
+        </div>
+
+        <div class="row">
+          <label class="check" title="避免用按鈕位置作答">
+            <input type="checkbox" id="shuffleChoices" checked />
+            <span id="shuffleText">隨機排列選項（此模式不打亂）</span>
+          </label>
+        </div>
+
+        <div class="row">
+          <label class="check" title="逾時自動算錯並換題">
+            <input type="checkbox" id="timedMode" />
+            <span>計時模式（5 秒）</span>
+          </label>
+          <div class="row" style="gap:6px">
+            <label for="timeLimit" class="muted">秒數</label>
+            <input type="number" id="timeLimit" min="3" max="60" value="5" />
+          </div>
+          <button class="btn ghost" id="pauseBtn" disabled>暫停</button>
+        </div>
+
+        <div class="score" id="score">
+          <div>✅ 答對：<strong id="okCnt">0</strong></div>
+          <div>❌ 答錯：<strong id="badCnt">0</strong></div>
+          <div>🔥 連續：<strong id="streak">0</strong></div>
+        </div>
+      </div>
+
+      <div class="grid">
+        <div>
+          <label>此調的 7 個和弦（參考）</label>
+          <div id="overview" class="list"></div>
+          <div class="footer">＊大調：I ii iii IV V vi vii°</div>
+
+          <div class="timer" id="timerBox" hidden>
+            <div class="tline"><div class="tbar" id="tbar"></div></div>
+            <div class="tmeta">
+              <span id="tlabel" class="muted">剩餘：—</span>
+              <span class="muted">逾時自動算錯</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="question" id="qbox">
+        <div>
+          <div class="q-meta" id="qKey">調性：</div>
+          <div class="q-title">題目：<span class="big" id="qText">按下方「開始」出題</span></div>
+        </div>
+        <div>
+          <span class="kbd">1–7</span>
+        </div>
+      </div>
+      <div id="choices" class="choices" aria-label="選項"></div>
+      <div class="result" id="result" hidden>
+        <span class="dot" id="rDot"></span>
+        <span id="rText"></span>
+      </div>
+    </div>
+
+    <div class="panel">
+      <details>
+        <summary>說明 / 小提醒</summary>
+        <ul>
+          <li>目前僅提供「大調」。</li>
+          <li>僅在「級數 ➜ 和弦」時會依勾選狀態打亂選項；「和弦 ➜ 級數」固定 I ii iii IV V vi vii° 順序。</li>
+          <li>計時模式：逾時視同答錯並自動換題，可暫停 / 繼續。</li>
+          <li>鍵盤：<span class="kbd">1–7</span> 依畫面順序作答、<span class="kbd">N</span> 下一題、<span class="kbd">P</span> 暫停/繼續、<span class="kbd">L</span> 切換總覽。</li>
+        </ul>
+      </details>
+    </div>
+
+    <div class="footer muted">© 和弦級數練習｜單檔版，離線可用。</div>
+  </div>
+
+  <!-- 底部固定控制列 -->
+  <div class="dock">
+    <div class="dock-inner">
+      <button class="btn" id="toggleList">顯示 / 隱藏總覽</button>
+      <button class="btn ghost" id="resetScore">重置分數</button>
+      <div class="grow"></div>
+      <button class="btn" id="nextBtn">開始</button>
+      <button class="btn primary" id="nextBtn2">下一題</button>
+    </div>
+  </div>
+
+<script>
+(function(){
+  // ---------- 大調資料 ----------
+  const NOTE_TO_PC = {
+    'C':0,'B#':0,'C#':1,'Db':1,'D':2,'D#':3,'Eb':3,'E':4,'Fb':4,'F':5,'E#':5,
+    'F#':6,'Gb':6,'G':7,'G#':8,'Ab':8,'A':9,'A#':10,'Bb':10,'B':11,'Cb':11
+  };
+  const NAMES_SHARP = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+  const NAMES_FLAT  = ['C','Db','D','Eb','E','F','Gb','G','Ab','A','Bb','B'];
+
+  const STEPS_MAJOR = [0,2,4,5,7,9,11];
+  const ROMAN_MAJOR = ["I","ii","iii","IV","V","vi","vii°"];
+  const QUAL_MAJOR  = ['maj','min','min','maj','maj','min','dim'];
+  const MAJOR_FLAT_PREF = new Set(['F','Bb','Eb','Ab','Db']);
+
+  // ---------- 小工具 ----------
+  const rand = (n)=> Math.floor(Math.random()*n);
+  const pick = (arr)=> arr[rand(arr.length)];
+  function pcToName(pc, preferSharps){ return (preferSharps?NAMES_SHARP:NAMES_FLAT)[((pc%12)+12)%12]; }
+  function parseRootName(s){ return NOTE_TO_PC[s] ?? 0; }
+  function guessPreferSharps(rootStr){
+    if (rootStr.includes('b')) return false;
+    if (rootStr.includes('#')) return true;
+    const name = pcToName(parseRootName(rootStr), true);
+    if (MAJOR_FLAT_PREF.has(name.replace('#',''))) return false;
+    return true;
+  }
+  function triadsMajor(rootName){
+    const rootPC = parseRootName(rootName);
+    const preferSharps = guessPreferSharps(rootName);
+    const chords = STEPS_MAJOR.map((st,i)=>{
+      const pc = (rootPC + st) % 12;
+      let name = pcToName(pc, preferSharps);
+      const q = QUAL_MAJOR[i];
+      if (q==='min') name += 'm';
+      else if (q==='dim') name += '°';
+      return { degree:i, roman:ROMAN_MAJOR[i], name, quality:q, pc };
+    });
+    return { chords };
+  }
+  function shuffledIndices(n){
+    const a = Array.from({length:n}, (_,i)=>i);
+    for(let i=n-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; }
+    return a;
+  }
+
+  // ---------- DOM ----------
+  const els = {
+    mode: ()=> document.querySelector('input[name="mode"]:checked').value,
+    keymode: ()=> document.querySelector('input[name="keymode"]:checked').value,
+    root: document.getElementById('root'),
+    overview: document.getElementById('overview'),
+    qKey: document.getElementById('qKey'),
+    qText: document.getElementById('qText'),
+    choices: document.getElementById('choices'),
+    result: document.getElementById('result'),
+    rDot: document.getElementById('rDot'),
+    rText: document.getElementById('rText'),
+    okCnt: document.getElementById('okCnt'),
+    badCnt: document.getElementById('badCnt'),
+    streak: document.getElementById('streak'),
+    toggleList: document.getElementById('toggleList'),
+    resetScore: document.getElementById('resetScore'),
+    qbox: document.getElementById('qbox'),
+    shuffle: document.getElementById('shuffleChoices'),
+    shuffleText: document.getElementById('shuffleText'),
+    // 計時
+    timedMode: document.getElementById('timedMode'),
+    timeLimit: document.getElementById('timeLimit'),
+    timerBox: document.getElementById('timerBox'),
+    tbar: document.getElementById('tbar'),
+    tlabel: document.getElementById('tlabel'),
+    pauseBtn: document.getElementById('pauseBtn'),
+    // 底部控制
+    nextBtn: document.getElementById('nextBtn'),
+    nextBtn2: document.getElementById('nextBtn2'),
+    // 模式切換
+    m1: document.getElementById('m1'),
+    m2: document.getElementById('m2'),
+  };
+
+  // ---------- 狀態 ----------
+  const state = {
+    ok:0, bad:0, streak:0,
+    lock:false,
+    current:null,
+    showList:true,
+    // 計時狀態
+    timer: { timeoutId:null, intervalId:null, endAt:0, remainingMs:0, paused:false, running:false }
+  };
+
+  function updateScoreboard(){
+    els.okCnt.textContent = state.ok;
+    els.badCnt.textContent = state.bad;
+    els.streak.textContent = state.streak;
+  }
+
+  function renderOverview(){
+    const { chords } = triadsMajor(els.root.value);
+    const list = chords.map(c=> `<span class="chip"><strong style="margin-right:6px">${c.roman}</strong>${c.name}</span>`).join('');
+    els.overview.innerHTML = state.showList ? list : `<span class="muted">（已隱藏）</span>`;
+  }
+
+  function setResult(ok, message){
+    els.result.hidden = false;
+    els.rDot.className = 'dot ' + (ok?'ok':'bad');
+    els.rText.textContent = message;
+    els.qbox.style.borderColor = ok ? 'rgba(46, 204, 113, .6)' : 'rgba(255,107,107,.7)';
+    setTimeout(()=>{ els.qbox.style.borderColor = 'var(--border)'; }, 300);
+  }
+
+  function clearResult(){
+    els.result.hidden = true;
+    els.rText.textContent = '';
+  }
+
+  // ---------- 計時控制 ----------
+  function stopTimer(){
+    const t = state.timer;
+    if (t.timeoutId){ clearTimeout(t.timeoutId); t.timeoutId=null; }
+    if (t.intervalId){ clearInterval(t.intervalId); t.intervalId=null; }
+    t.running = false;
+  }
+  function resetTimerUI(){
+    els.tbar.style.width = '0%';
+    els.tlabel.textContent = '剩餘：—';
+  }
+  function startTimer(){
+    const enabled = els.timedMode.checked;
+    if (!enabled){ stopTimer(); els.timerBox.hidden = true; els.pauseBtn.disabled = true; return; }
+    els.timerBox.hidden = false;
+    els.pauseBtn.disabled = false;
+
+    const t = state.timer;
+    const limitMs = Math.max(3, Math.min(60, Number(els.timeLimit.value)||5)) * 1000;
+
+    // 若是從暫停恢復，使用 remainingMs；否則重置為整段
+    const startMs = performance.now();
+    const duration = (t.paused && t.remainingMs>0) ? t.remainingMs : limitMs;
+    t.paused = false;
+    t.remainingMs = duration;
+    t.endAt = startMs + duration;
+    t.running = true;
+
+    // 先清理
+    stopTimer();
+
+    // 視覺每 100ms 更新
+    t.intervalId = setInterval(()=>{
+      const now = performance.now();
+      const left = Math.max(0, t.endAt - now);
+      t.remainingMs = left;
+      const pct = 100 * (left / duration);
+      els.tbar.style.width = `${pct}%`;
+      els.tlabel.textContent = `剩餘：${(left/1000).toFixed(1)}s`;
+    }, 100);
+
+    // 到時：直接算錯並自動下一題
+    t.timeoutId = setTimeout(()=>{
+      if (state.lock) return; // 已作答則忽略
+      const correctBtn = [...document.querySelectorAll('.choice')]
+        .find(b => Number(b.dataset.actual) === state.current?.answerIdx);
+      if (correctBtn) correctBtn.classList.add('correct');
+      state.bad += 1; state.streak = 0;
+      setResult(false, '逾時！這題算錯，繼續下一題。');
+      updateScoreboard();
+      lockChoices();
+      stopTimer();
+      setTimeout(nextQuestion, 600);
+    }, duration);
+  }
+
+  function togglePause(){
+    const t = state.timer;
+    if (!els.timedMode.checked) return;
+    if (!t.running && !t.paused){ // 尚未開始
+      startTimer();
+      els.pauseBtn.textContent = '暫停';
+      return;
+    }
+    if (t.paused){
+      startTimer();
+      els.pauseBtn.textContent = '暫停';
+    }else{
+      t.paused = true;
+      stopTimer();
+      els.pauseBtn.textContent = '繼續';
+    }
+  }
+
+  // ---------- 出題 ----------
+  function updateShuffleLabel(){
+    if (els.mode()==='degreeToChord'){
+      els.shuffleText.textContent = '隨機排列選項（避免位置記憶）';
+    }else{
+      els.shuffleText.textContent = '隨機排列選項（此模式不打亂）';
+    }
+  }
+
+  function nextQuestion(){
+    state.lock = false;
+    clearResult();
+    els.choices.innerHTML = '';
+
+    // 決定調性
+    let root = els.root.value;
+    if (els.keymode() === 'random'){
+      const ROOTS = ['C','C#','D','Eb','E','F','F#','G','Ab','A','Bb','B'];
+      root = pick(ROOTS);
+    }
+
+    const { chords } = triadsMajor(root);
+    const mode = els.mode();
+    els.qKey.textContent = `調性：${root} 大調`;
+
+    // 選目標（正解）
+    const target = pick(chords);
+    state.current = { root, mode, answerIdx: target.degree, target };
+
+    // 只在「級數 ➜ 和弦」時可打亂
+    const shouldShuffle = (els.shuffle.checked && mode === 'degreeToChord');
+    const order = shouldShuffle ? shuffledIndices(7) : Array.from({length:7},(_,i)=>i);
+
+    if (mode === 'chordToDegree'){
+      // 題幹顯示和弦；選項為固定 I ii iii IV V vi vii°
+      els.qText.textContent = target.name;
+      order.forEach((k, visualIdx)=>{
+        const lab = ROMAN_MAJOR[k];
+        const btn = document.createElement('button');
+        btn.className = 'choice';
+        btn.dataset.actual = String(k);
+        btn.innerHTML = `<span class="idxHint">${visualIdx+1}</span><div style="font-weight:800">${lab}</div><div class="muted" style="font-size:12px">級數</div>`;
+        btn.addEventListener('click', ()=> onChoose(k, btn));
+        els.choices.appendChild(btn);
+      });
+    }else{
+      // 題幹顯示級數；選項是和弦（此模式可依勾選打亂）
+      els.qText.textContent = target.roman;
+      order.forEach((k, visualIdx)=>{
+        const c = chords[k];
+        const btn = document.createElement('button');
+        btn.className = 'choice';
+        btn.dataset.actual = String(k);
+        btn.innerHTML = `<span class="idxHint">${visualIdx+1}</span><div style="font-weight:800">${c.name}</div><div class="muted" style="font-size:12px">和弦</div>`;
+        btn.addEventListener('click', ()=> onChoose(k, btn));
+        els.choices.appendChild(btn);
+      });
+    }
+
+    // 重繪總覽
+    renderOverview();
+
+    // 計時控制
+    resetTimerUI();
+    state.timer.paused = false;
+    state.timer.remainingMs = 0;
+    if (els.timedMode.checked){
+      startTimer();
+      els.pauseBtn.textContent = '暫停';
+    }else{
+      stopTimer();
+      els.pauseBtn.disabled = true;
+    }
+
+    // 更新底部按鈕文字與亂序提示
+    els.nextBtn.textContent = '開始';
+    els.nextBtn2.textContent = '下一題';
+    updateShuffleLabel();
+  }
+
+  function lockChoices(){
+    state.lock = true;
+    document.querySelectorAll('.choice').forEach(b=> b.disabled = true);
+  }
+
+  // 作答（含自動下一題）
+  function onChoose(idx, btnEl){
+    if (state.lock || !state.current) return;
+    const correct = idx === state.current.answerIdx;
+    const all = Array.from(document.querySelectorAll('.choice'));
+    const correctBtn = all.find(b => Number(b.dataset.actual) === state.current.answerIdx);
+
+    if (correct){
+      btnEl.classList.add('correct');
+      state.ok += 1; state.streak += 1;
+      setResult(true, '答對了！');
+      updateScoreboard();
+      lockChoices();
+      stopTimer();
+      setTimeout(nextQuestion, 600);
+    }else{
+      btnEl.classList.add('wrong');
+      if (correctBtn) correctBtn.classList.add('correct');
+      state.bad += 1; state.streak = 0;
+      const tip = (state.current.mode==='chordToDegree')
+        ? `正確級數：${ROMAN_MAJOR[state.current.answerIdx]}`
+        : `正確和弦：${triadsMajor(els.root.value).chords[state.current.answerIdx].name}`;
+      setResult(false, `再試試～ ${tip}`);
+      updateScoreboard();
+      lockChoices();
+      stopTimer();
+      setTimeout(nextQuestion, 600);
+    }
+  }
+
+  // ---------- 事件 ----------
+  // 底部控制列
+  els.nextBtn.addEventListener('click', nextQuestion);    // 「開始」
+  els.nextBtn2.addEventListener('click', nextQuestion);   // 「下一題」
+
+  // 其他控制
+  document.getElementById('toggleList').addEventListener('click', ()=>{ state.showList = !state.showList; renderOverview(); });
+  els.resetScore.addEventListener('click', ()=>{
+    state.ok = state.bad = state.streak = 0; updateScoreboard(); clearResult();
+    document.querySelectorAll('.choice').forEach(b=>{ b.classList.remove('correct','wrong'); b.disabled=false; });
+    stopTimer(); resetTimerUI();
+  });
+
+  // 計時模式/秒數改變
+  els.timedMode.addEventListener('change', ()=>{
+    if (els.timedMode.checked){
+      els.pauseBtn.disabled = false;
+      if (state.current && !state.lock){ startTimer(); els.pauseBtn.textContent='暫停'; }
+      els.timerBox.hidden = false;
+    }else{
+      stopTimer(); resetTimerUI(); els.timerBox.hidden = true; els.pauseBtn.disabled = true; els.pauseBtn.textContent='暫停';
+    }
+  });
+  els.timeLimit.addEventListener('change', ()=>{
+    if (els.timedMode.checked && state.current && !state.lock){
+      startTimer();
+    }
+  });
+  els.pauseBtn.addEventListener('click', togglePause);
+
+  // 根音與模式變更
+  els.root.addEventListener('change', renderOverview);
+  els.m1.addEventListener('change', updateShuffleLabel);
+  els.m2.addEventListener('change', updateShuffleLabel);
+
+  // 鍵盤快捷：1–7 作答、N 下一題、P 暫停/繼續、L 列表
+  window.addEventListener('keydown', (e)=>{
+    const key = e.key.toLowerCase();
+    if (key>='1' && key<='7'){
+      const vi = parseInt(key,10)-1;
+      const btns = document.querySelectorAll('.choice');
+      if (btns[vi]) btns[vi].click(); // 依畫面順序
+    }else if (key==='n'){
+      nextQuestion();
+    }else if (key==='p'){
+      if (!els.pauseBtn.disabled) togglePause();
+    }else if (key==='l'){
+      document.getElementById('toggleList').click();
+    }
+  });
+
+  // 初始
+  renderOverview(); updateScoreboard(); resetTimerUI(); els.timerBox.hidden = true; els.pauseBtn.disabled = true;
+  updateShuffleLabel();
+})();
+</script>
+</body>
+</html>
