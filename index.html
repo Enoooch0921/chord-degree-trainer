@@ -90,6 +90,13 @@
   .btn{padding:10px 14px; border-radius:10px; border:1px solid var(--border); background:var(--btn); color:var(--ink); cursor:pointer}
   .btn.primary{background:var(--accent); border-color:transparent; color:#0c1226; font-weight:800}
   .btn.ghost{background:transparent}
+
+  /* 訪問次數（純文字） */
+  .visits{
+    max-width:1100px; margin:16px auto; padding:0 16px; text-align:center; color:var(--muted); font-size:13px;
+  }
+  .visits strong{color:var(--ink)}
+  .visits .fallback{margin-top:6px; opacity:.8}
 </style>
 </head>
 <body>
@@ -117,9 +124,18 @@
           <div class="grow">
             <label for="root">主音（Key Root）</label>
             <select id="root">
-              <option>C</option><option>C#</option><option>D</option><option>Eb</option>
-              <option>E</option><option>F</option><option>F#</option><option>G</option>
-              <option>Ab</option><option>A</option><option>Bb</option><option>B</option>
+              <option>C</option>
+              <option>C#</option><option>Db</option>
+              <option>D</option>
+              <option>D#</option><option>Eb</option>
+              <option>E</option>
+              <option>F</option>
+              <option>F#</option><option>Gb</option>
+              <option>G</option>
+              <option>G#</option><option>Ab</option>
+              <option>A</option>
+              <option>A#</option><option>Bb</option>
+              <option>B</option>
             </select>
           </div>
 
@@ -207,6 +223,14 @@
     </div>
 
     <div class="footer muted">© 和弦級數練習｜單檔版，離線可用。</div>
+  </div>
+
+  <!-- ✅ 訪問次數（純文字顯示，帶徽章備援） -->
+  <div class="visits" id="visitsBox" aria-live="polite">
+    <span>已訪問：<strong id="visitText">—</strong> 次</span>
+    <div class="fallback" id="visitFallback" hidden>
+      <img src="https://hits.seeyoufarm.com/api/count/incr/badge.svg?url=https%3A%2F%2Fenoooch0921.github.io%2Fchord-degree-trainer&count_bg=%2379C83D&title_bg=%23555555&icon=&icon_color=%23E7E7E7&title=visits&edge_flat=false" alt="訪問次數徽章"/>
+    </div>
   </div>
 
   <!-- 底部固定控制列 -->
@@ -299,6 +323,9 @@
     // 模式切換
     m1: document.getElementById('m1'),
     m2: document.getElementById('m2'),
+    // 訪問統計
+    visitText: document.getElementById('visitText'),
+    visitFallback: document.getElementById('visitFallback'),
   };
 
   // ---------- 狀態 ----------
@@ -336,6 +363,27 @@
     els.rText.textContent = '';
   }
 
+  // ---------- 訪問次數：純文字顯示（帶失敗備援） ----------
+  function loadVisits(){
+    const COUNTER_URL = "https://hits.seeyoufarm.com/api/count/incr/badge.svg?url=" +
+      encodeURIComponent("https://enoooch0921.github.io/chord-degree-trainer");
+    fetch(COUNTER_URL, { cache: 'no-store' })
+      .then(r => r.text())
+      .then(svg => {
+        const m = svg.match(/\d+/g);
+        const num = m ? m[m.length - 1] : null;
+        if (num){
+          els.visitText.textContent = num;
+        }else{
+          throw new Error('No number found in SVG');
+        }
+      })
+      .catch(()=>{
+        els.visitFallback.hidden = false;
+        els.visitText.textContent = '—';
+      });
+  }
+
   // ---------- 計時控制 ----------
   function stopTimer(){
     const t = state.timer;
@@ -356,7 +404,6 @@
     const t = state.timer;
     const limitMs = Math.max(3, Math.min(60, Number(els.timeLimit.value)||5)) * 1000;
 
-    // 若是從暫停恢復，使用 remainingMs；否則重置為整段
     const startMs = performance.now();
     const duration = (t.paused && t.remainingMs>0) ? t.remainingMs : limitMs;
     t.paused = false;
@@ -364,10 +411,8 @@
     t.endAt = startMs + duration;
     t.running = true;
 
-    // 先清理
     stopTimer();
 
-    // 視覺每 100ms 更新
     t.intervalId = setInterval(()=>{
       const now = performance.now();
       const left = Math.max(0, t.endAt - now);
@@ -377,9 +422,8 @@
       els.tlabel.textContent = `剩餘：${(left/1000).toFixed(1)}s`;
     }, 100);
 
-    // 到時：直接算錯並自動下一題
     t.timeoutId = setTimeout(()=>{
-      if (state.lock) return; // 已作答則忽略
+      if (state.lock) return;
       const correctBtn = [...document.querySelectorAll('.choice')]
         .find(b => Number(b.dataset.actual) === state.current?.answerIdx);
       if (correctBtn) correctBtn.classList.add('correct');
@@ -395,7 +439,7 @@
   function togglePause(){
     const t = state.timer;
     if (!els.timedMode.checked) return;
-    if (!t.running && !t.paused){ // 尚未開始
+    if (!t.running && !t.paused){
       startTimer();
       els.pauseBtn.textContent = '暫停';
       return;
@@ -424,10 +468,11 @@
     clearResult();
     els.choices.innerHTML = '';
 
-    // 決定調性
+    // 根音：固定或隨機
     let root = els.root.value;
     if (els.keymode() === 'random'){
-      const ROOTS = ['C','C#','D','Eb','E','F','F#','G','Ab','A','Bb','B'];
+      // ✅ 17 個主音（把等音當獨立選項）
+      const ROOTS = ['C','C#','Db','D','D#','Eb','E','F','F#','Gb','G','G#','Ab','A','A#','Bb','B'];
       root = pick(ROOTS);
     }
 
@@ -435,7 +480,6 @@
     const mode = els.mode();
     els.qKey.textContent = `調性：${root} 大調`;
 
-    // 選目標（正解）
     const target = pick(chords);
     state.current = { root, mode, answerIdx: target.degree, target };
 
@@ -444,7 +488,6 @@
     const order = shouldShuffle ? shuffledIndices(7) : Array.from({length:7},(_,i)=>i);
 
     if (mode === 'chordToDegree'){
-      // 題幹顯示和弦；選項為固定 I ii iii IV V vi vii°
       els.qText.textContent = target.name;
       order.forEach((k, visualIdx)=>{
         const lab = ROMAN_MAJOR[k];
@@ -456,7 +499,6 @@
         els.choices.appendChild(btn);
       });
     }else{
-      // 題幹顯示級數；選項是和弦（此模式可依勾選打亂）
       els.qText.textContent = target.roman;
       order.forEach((k, visualIdx)=>{
         const c = chords[k];
@@ -469,10 +511,8 @@
       });
     }
 
-    // 重繪總覽
     renderOverview();
 
-    // 計時控制
     resetTimerUI();
     state.timer.paused = false;
     state.timer.remainingMs = 0;
@@ -484,7 +524,6 @@
       els.pauseBtn.disabled = true;
     }
 
-    // 更新底部按鈕文字與亂序提示
     els.nextBtn.textContent = '開始';
     els.nextBtn2.textContent = '下一題';
     updateShuffleLabel();
@@ -495,7 +534,6 @@
     document.querySelectorAll('.choice').forEach(b=> b.disabled = true);
   }
 
-  // 作答（含自動下一題）
   function onChoose(idx, btnEl){
     if (state.lock || !state.current) return;
     const correct = idx === state.current.answerIdx;
@@ -526,11 +564,9 @@
   }
 
   // ---------- 事件 ----------
-  // 底部控制列
-  els.nextBtn.addEventListener('click', nextQuestion);    // 「開始」
-  els.nextBtn2.addEventListener('click', nextQuestion);   // 「下一題」
+  els.nextBtn.addEventListener('click', nextQuestion);
+  els.nextBtn2.addEventListener('click', nextQuestion);
 
-  // 其他控制
   document.getElementById('toggleList').addEventListener('click', ()=>{ state.showList = !state.showList; renderOverview(); });
   els.resetScore.addEventListener('click', ()=>{
     state.ok = state.bad = state.streak = 0; updateScoreboard(); clearResult();
@@ -538,7 +574,6 @@
     stopTimer(); resetTimerUI();
   });
 
-  // 計時模式/秒數改變
   els.timedMode.addEventListener('change', ()=>{
     if (els.timedMode.checked){
       els.pauseBtn.disabled = false;
@@ -555,18 +590,16 @@
   });
   els.pauseBtn.addEventListener('click', togglePause);
 
-  // 根音與模式變更
   els.root.addEventListener('change', renderOverview);
   els.m1.addEventListener('change', updateShuffleLabel);
   els.m2.addEventListener('change', updateShuffleLabel);
 
-  // 鍵盤快捷：1–7 作答、N 下一題、P 暫停/繼續、L 列表
   window.addEventListener('keydown', (e)=>{
     const key = e.key.toLowerCase();
     if (key>='1' && key<='7'){
       const vi = parseInt(key,10)-1;
       const btns = document.querySelectorAll('.choice');
-      if (btns[vi]) btns[vi].click(); // 依畫面順序
+      if (btns[vi]) btns[vi].click();
     }else if (key==='n'){
       nextQuestion();
     }else if (key==='p'){
@@ -579,6 +612,7 @@
   // 初始
   renderOverview(); updateScoreboard(); resetTimerUI(); els.timerBox.hidden = true; els.pauseBtn.disabled = true;
   updateShuffleLabel();
+  loadVisits();
 })();
 </script>
 </body>
