@@ -354,21 +354,73 @@
   }
 
   // ---------- 訪問次數（countapi.xyz） ----------
-  function loadVisits(){
-    const namespace = 'enoooch0921.github.io';
-    const key = 'chord-degree-trainer';
-    fetch(`https://api.countapi.xyz/hit/${encodeURIComponent(namespace)}/${encodeURIComponent(key)}`, {
-      cache: 'no-store'
-    })
-    .then(r => r.json())
-    .then(data => {
-      const num = (data && typeof data.value === 'number') ? data.value : null;
-      if (num !== null){
-        els.visitText.textContent = num.toLocaleString('zh-Hant');
-      }
-    })
-    .catch(()=>{ /* 失敗就維持「—」 */ });
+  // 取代原本的 loadVisits()
+function loadVisits(){
+  const namespace = 'enoooch0921.github.io';
+  const key = 'chord-degree-trainer';
+
+  const hitUrl    = `https://api.countapi.xyz/hit/${encodeURIComponent(namespace)}/${encodeURIComponent(key)}`;
+  const updateUrl = `https://api.countapi.xyz/update/${encodeURIComponent(namespace)}/${encodeURIComponent(key)}?amount=1`;
+  const getUrl    = `https://api.countapi.xyz/get/${encodeURIComponent(namespace)}/${encodeURIComponent(key)}`;
+
+  // 統一 fetch（含逾時）
+  function fetchWithTimeout(url, ms = 4000){
+    const c = new AbortController();
+    const t = setTimeout(()=>c.abort(), ms);
+    return fetch(url, { cache: 'no-store', signal: c.signal })
+      .finally(()=>clearTimeout(t));
   }
+
+  // 依序嘗試：hit → update → get；全失敗則用本機備援
+  (async ()=>{
+    try{
+      // 1) 一般成功路徑：hit（+1 並回傳 value）
+      let r = await fetchWithTimeout(hitUrl);
+      if (!r.ok) throw new Error('hit not ok');
+      let data = await r.json();
+      if (typeof data.value === 'number'){
+        els.visitText.textContent = data.value.toLocaleString('zh-Hant');
+        return;
+      }
+      throw new Error('hit no value');
+    }catch(e1){
+      try{
+        // 2) 備案：update（另一個 +1 端點）
+        let r = await fetchWithTimeout(updateUrl);
+        if (!r.ok) throw new Error('update not ok');
+        let data = await r.json();
+        if (typeof data.value === 'number'){
+          els.visitText.textContent = data.value.toLocaleString('zh-Hant');
+          return;
+        }
+        throw new Error('update no value');
+      }catch(e2){
+        try{
+          // 3) 最後：get（只讀不 +1），若能讀到值，呈現 value+1（模擬本次進站）
+          let r = await fetchWithTimeout(getUrl);
+          if (!r.ok) throw new Error('get not ok');
+          let data = await r.json();
+          if (typeof data.value === 'number'){
+            const shown = data.value + 1;
+            els.visitText.textContent = shown.toLocaleString('zh-Hant');
+            return;
+          }
+          throw new Error('get no value');
+        }catch(e3){
+          // 4) 全部失敗：可能被擋 → 本機備援（只對這台瀏覽器生效）
+          try{
+            const k = 'local_fallback_visit_count';
+            const v = Number(localStorage.getItem(k) || '0') + 1;
+            localStorage.setItem(k, String(v));
+            els.visitText.textContent = `${v.toLocaleString('zh-Hant')}（本機）`;
+          }catch{
+            // 連 localStorage 也不可用就維持「—」
+          }
+        }
+      }
+    }
+  })();
+}
 
   // ---------- 計時控制 ----------
   function stopTimer(){
