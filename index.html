@@ -96,6 +96,7 @@
     max-width:1100px; margin:16px auto; padding:0 16px; text-align:center; color:var(--muted); font-size:13px;
   }
   .visits strong{color:var(--ink)}
+  .visits .fallback{margin-top:6px; opacity:.8}
 </style>
 </head>
 <body>
@@ -224,9 +225,12 @@
     <div class="footer muted">© 和弦級數練習｜單檔版，離線可用。</div>
   </div>
 
-  <!-- ✅ 訪問次數（純文字；使用 countapi.xyz） -->
+  <!-- ✅ 訪問次數（純文字顯示，帶徽章備援） -->
   <div class="visits" id="visitsBox" aria-live="polite">
     <span>已訪問：<strong id="visitText">—</strong> 次</span>
+    <div class="fallback" id="visitFallback" hidden>
+      <img src="https://hits.seeyoufarm.com/api/count/incr/badge.svg?url=https%3A%2F%2Fenoooch0921.github.io%2Fchord-degree-trainer&count_bg=%2379C83D&title_bg=%23555555&icon=&icon_color=%23E7E7E7&title=visits&edge_flat=false" alt="訪問次數徽章"/>
+    </div>
   </div>
 
   <!-- 底部固定控制列 -->
@@ -306,17 +310,22 @@
     qbox: document.getElementById('qbox'),
     shuffle: document.getElementById('shuffleChoices'),
     shuffleText: document.getElementById('shuffleText'),
+    // 計時
     timedMode: document.getElementById('timedMode'),
     timeLimit: document.getElementById('timeLimit'),
     timerBox: document.getElementById('timerBox'),
     tbar: document.getElementById('tbar'),
     tlabel: document.getElementById('tlabel'),
     pauseBtn: document.getElementById('pauseBtn'),
+    // 底部控制
     nextBtn: document.getElementById('nextBtn'),
     nextBtn2: document.getElementById('nextBtn2'),
+    // 模式切換
     m1: document.getElementById('m1'),
     m2: document.getElementById('m2'),
+    // 訪問統計
     visitText: document.getElementById('visitText'),
+    visitFallback: document.getElementById('visitFallback'),
   };
 
   // ---------- 狀態 ----------
@@ -325,6 +334,7 @@
     lock:false,
     current:null,
     showList:true,
+    // 計時狀態
     timer: { timeoutId:null, intervalId:null, endAt:0, remainingMs:0, paused:false, running:false }
   };
 
@@ -353,74 +363,49 @@
     els.rText.textContent = '';
   }
 
-  // ---------- 訪問次數（countapi.xyz） ----------
-  // 取代原本的 loadVisits()
-function loadVisits(){
-  const namespace = 'enoooch0921.github.io';
-  const key = 'chord-degree-trainer';
+  // ✅ 訪問次數（呼叫你的 GAS API）
+  function loadVisits(){
+    const ns = 'enoooch0921.github.io';
+    const key = 'chord-degree-trainer';
+    const GAS_URL = 'https://script.google.com/macros/s/AKfycbz4cPmUtxPPw3fHK7TOJLqTfNJmlbNeCNzcSPLR_dgqIfIqdXeoOkCnOJFtFYhkua8/exec';
 
-  const hitUrl    = `https://api.countapi.xyz/hit/${encodeURIComponent(namespace)}/${encodeURIComponent(key)}`;
-  const updateUrl = `https://api.countapi.xyz/update/${encodeURIComponent(namespace)}/${encodeURIComponent(key)}?amount=1`;
-  const getUrl    = `https://api.countapi.xyz/get/${encodeURIComponent(namespace)}/${encodeURIComponent(key)}`;
+    const upUrl  = `${GAS_URL}?ns=${encodeURIComponent(ns)}&key=${encodeURIComponent(key)}&op=up&amount=1`;
+    const getUrl = `${GAS_URL}?ns=${encodeURIComponent(ns)}&key=${encodeURIComponent(key)}&op=get`;
 
-  // 統一 fetch（含逾時）
-  function fetchWithTimeout(url, ms = 4000){
-    const c = new AbortController();
-    const t = setTimeout(()=>c.abort(), ms);
-    return fetch(url, { cache: 'no-store', signal: c.signal })
-      .finally(()=>clearTimeout(t));
-  }
+    const fetchWithTimeout = (url, ms=5000)=>{
+      const ctrl = new AbortController(); const t=setTimeout(()=>ctrl.abort(),ms);
+      return fetch(url, { signal:ctrl.signal, cache:'no-store' }).finally(()=>clearTimeout(t));
+    };
 
-  // 依序嘗試：hit → update → get；全失敗則用本機備援
-  (async ()=>{
-    try{
-      // 1) 一般成功路徑：hit（+1 並回傳 value）
-      let r = await fetchWithTimeout(hitUrl);
-      if (!r.ok) throw new Error('hit not ok');
-      let data = await r.json();
-      if (typeof data.value === 'number'){
-        els.visitText.textContent = data.value.toLocaleString('zh-Hant');
-        return;
-      }
-      throw new Error('hit no value');
-    }catch(e1){
+    (async ()=>{
       try{
-        // 2) 備案：update（另一個 +1 端點）
-        let r = await fetchWithTimeout(updateUrl);
-        if (!r.ok) throw new Error('update not ok');
-        let data = await r.json();
-        if (typeof data.value === 'number'){
-          els.visitText.textContent = data.value.toLocaleString('zh-Hant');
+        const r = await fetchWithTimeout(upUrl);
+        const j = await r.json();
+        if (j && j.ok && typeof j.value === 'number'){
+          document.getElementById('visitText').textContent = j.value.toLocaleString('zh-Hant');
           return;
         }
-        throw new Error('update no value');
-      }catch(e2){
+        throw new Error('up failed');
+      }catch{
         try{
-          // 3) 最後：get（只讀不 +1），若能讀到值，呈現 value+1（模擬本次進站）
-          let r = await fetchWithTimeout(getUrl);
-          if (!r.ok) throw new Error('get not ok');
-          let data = await r.json();
-          if (typeof data.value === 'number'){
-            const shown = data.value + 1;
-            els.visitText.textContent = shown.toLocaleString('zh-Hant');
+          const r = await fetchWithTimeout(getUrl);
+          const j = await r.json();
+          if (j && j.ok && typeof j.value === 'number'){
+            document.getElementById('visitText').textContent = (j.value+1).toLocaleString('zh-Hant');
             return;
           }
-          throw new Error('get no value');
-        }catch(e3){
-          // 4) 全部失敗：可能被擋 → 本機備援（只對這台瀏覽器生效）
+          throw new Error('get failed');
+        }catch{
           try{
-            const k = 'local_fallback_visit_count';
-            const v = Number(localStorage.getItem(k) || '0') + 1;
-            localStorage.setItem(k, String(v));
-            els.visitText.textContent = `${v.toLocaleString('zh-Hant')}（本機）`;
-          }catch{
-            // 連 localStorage 也不可用就維持「—」
-          }
+            const k='local_fallback_visit_count';
+            const v=Number(localStorage.getItem(k)||'0')+1;
+            localStorage.setItem(k,String(v));
+            document.getElementById('visitText').textContent = `${v.toLocaleString('zh-Hant')}（本機）`;
+          }catch{}
         }
       }
-    }
-  })();
-}
+    })();
+  }
 
   // ---------- 計時控制 ----------
   function stopTimer(){
@@ -506,9 +491,10 @@ function loadVisits(){
     clearResult();
     els.choices.innerHTML = '';
 
-    // 根音：固定或隨機（17 個主音，各自獨立）
+    // 根音：固定或隨機
     let root = els.root.value;
     if (els.keymode() === 'random'){
+      // ✅ 17 個主音（把等音當獨立選項）
       const ROOTS = ['C','C#','Db','D','D#','Eb','E','F','F#','Gb','G','G#','Ab','A','A#','Bb','B'];
       root = pick(ROOTS);
     }
@@ -628,8 +614,8 @@ function loadVisits(){
   els.pauseBtn.addEventListener('click', togglePause);
 
   els.root.addEventListener('change', renderOverview);
-  document.getElementById('m1').addEventListener('change', updateShuffleLabel);
-  document.getElementById('m2').addEventListener('change', updateShuffleLabel);
+  els.m1.addEventListener('change', updateShuffleLabel);
+  els.m2.addEventListener('change', updateShuffleLabel);
 
   window.addEventListener('keydown', (e)=>{
     const key = e.key.toLowerCase();
@@ -649,7 +635,7 @@ function loadVisits(){
   // 初始
   renderOverview(); updateScoreboard(); resetTimerUI(); els.timerBox.hidden = true; els.pauseBtn.disabled = true;
   updateShuffleLabel();
-  loadVisits(); // ← 啟用純文字訪問計數
+  loadVisits();
 })();
 </script>
 </body>
