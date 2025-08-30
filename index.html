@@ -96,7 +96,6 @@
     max-width:1100px; margin:16px auto; padding:0 16px; text-align:center; color:var(--muted); font-size:13px;
   }
   .visits strong{color:var(--ink)}
-  .visits .fallback{margin-top:6px; opacity:.8}
 </style>
 </head>
 <body>
@@ -225,12 +224,9 @@
     <div class="footer muted">© 和弦級數練習｜單檔版，離線可用。</div>
   </div>
 
-  <!-- ✅ 訪問次數（純文字顯示，帶徽章備援） -->
+  <!-- ✅ 訪問次數（純文字；使用 countapi.xyz） -->
   <div class="visits" id="visitsBox" aria-live="polite">
     <span>已訪問：<strong id="visitText">—</strong> 次</span>
-    <div class="fallback" id="visitFallback" hidden>
-      <img src="https://hits.seeyoufarm.com/api/count/incr/badge.svg?url=https%3A%2F%2Fenoooch0921.github.io%2Fchord-degree-trainer&count_bg=%2379C83D&title_bg=%23555555&icon=&icon_color=%23E7E7E7&title=visits&edge_flat=false" alt="訪問次數徽章"/>
-    </div>
   </div>
 
   <!-- 底部固定控制列 -->
@@ -310,22 +306,17 @@
     qbox: document.getElementById('qbox'),
     shuffle: document.getElementById('shuffleChoices'),
     shuffleText: document.getElementById('shuffleText'),
-    // 計時
     timedMode: document.getElementById('timedMode'),
     timeLimit: document.getElementById('timeLimit'),
     timerBox: document.getElementById('timerBox'),
     tbar: document.getElementById('tbar'),
     tlabel: document.getElementById('tlabel'),
     pauseBtn: document.getElementById('pauseBtn'),
-    // 底部控制
     nextBtn: document.getElementById('nextBtn'),
     nextBtn2: document.getElementById('nextBtn2'),
-    // 模式切換
     m1: document.getElementById('m1'),
     m2: document.getElementById('m2'),
-    // 訪問統計
     visitText: document.getElementById('visitText'),
-    visitFallback: document.getElementById('visitFallback'),
   };
 
   // ---------- 狀態 ----------
@@ -334,7 +325,6 @@
     lock:false,
     current:null,
     showList:true,
-    // 計時狀態
     timer: { timeoutId:null, intervalId:null, endAt:0, remainingMs:0, paused:false, running:false }
   };
 
@@ -363,25 +353,21 @@
     els.rText.textContent = '';
   }
 
-  // ---------- 訪問次數：純文字顯示（帶失敗備援） ----------
+  // ---------- 訪問次數（countapi.xyz） ----------
   function loadVisits(){
-    const COUNTER_URL = "https://hits.seeyoufarm.com/api/count/incr/badge.svg?url=" +
-      encodeURIComponent("https://enoooch0921.github.io/chord-degree-trainer");
-    fetch(COUNTER_URL, { cache: 'no-store' })
-      .then(r => r.text())
-      .then(svg => {
-        const m = svg.match(/\d+/g);
-        const num = m ? m[m.length - 1] : null;
-        if (num){
-          els.visitText.textContent = num;
-        }else{
-          throw new Error('No number found in SVG');
-        }
-      })
-      .catch(()=>{
-        els.visitFallback.hidden = false;
-        els.visitText.textContent = '—';
-      });
+    const namespace = 'enoooch0921.github.io';
+    const key = 'chord-degree-trainer';
+    fetch(`https://api.countapi.xyz/hit/${encodeURIComponent(namespace)}/${encodeURIComponent(key)}`, {
+      cache: 'no-store'
+    })
+    .then(r => r.json())
+    .then(data => {
+      const num = (data && typeof data.value === 'number') ? data.value : null;
+      if (num !== null){
+        els.visitText.textContent = num.toLocaleString('zh-Hant');
+      }
+    })
+    .catch(()=>{ /* 失敗就維持「—」 */ });
   }
 
   // ---------- 計時控制 ----------
@@ -468,10 +454,9 @@
     clearResult();
     els.choices.innerHTML = '';
 
-    // 根音：固定或隨機
+    // 根音：固定或隨機（17 個主音，各自獨立）
     let root = els.root.value;
     if (els.keymode() === 'random'){
-      // ✅ 17 個主音（把等音當獨立選項）
       const ROOTS = ['C','C#','Db','D','D#','Eb','E','F','F#','Gb','G','G#','Ab','A','A#','Bb','B'];
       root = pick(ROOTS);
     }
@@ -591,8 +576,8 @@
   els.pauseBtn.addEventListener('click', togglePause);
 
   els.root.addEventListener('change', renderOverview);
-  els.m1.addEventListener('change', updateShuffleLabel);
-  els.m2.addEventListener('change', updateShuffleLabel);
+  document.getElementById('m1').addEventListener('change', updateShuffleLabel);
+  document.getElementById('m2').addEventListener('change', updateShuffleLabel);
 
   window.addEventListener('keydown', (e)=>{
     const key = e.key.toLowerCase();
@@ -612,7 +597,7 @@
   // 初始
   renderOverview(); updateScoreboard(); resetTimerUI(); els.timerBox.hidden = true; els.pauseBtn.disabled = true;
   updateShuffleLabel();
-  loadVisits();
+  loadVisits(); // ← 啟用純文字訪問計數
 })();
 </script>
 </body>
