@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
-<title>Chord Mastery Pro</title>
+<title>Chord Mastery Pro (+Audio)</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
 <style>
@@ -13,7 +13,7 @@
                radial-gradient(at 100% 0%, hsla(339,49%,30%,1) 0, transparent 50%);
     --card-bg: rgba(30, 35, 60, 0.7);
     --card-border: rgba(255, 255, 255, 0.1);
-    --primary: #8b5cf6; /* Violet */
+    --primary: #8b5cf6;
     --primary-glow: rgba(139, 92, 246, 0.5);
     --correct: #10b981;
     --wrong: #ef4444;
@@ -25,22 +25,14 @@
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   
   body {
-    margin: 0;
-    font-family: var(--font);
-    background-color: #0f172a;
-    background-image: var(--bg-grad);
-    background-attachment: fixed;
-    background-size: cover;
-    color: var(--text-main);
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    overflow: hidden;
+    margin: 0; font-family: var(--font);
+    background-color: #0f172a; background-image: var(--bg-grad);
+    background-attachment: fixed; background-size: cover;
+    color: var(--text-main); min-height: 100vh;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden;
   }
 
-  /* 動態背景光暈 */
+  /* 動態背景 */
   .orb {
     position: absolute; width: 50vh; height: 50vh;
     background: radial-gradient(circle, rgba(124, 58, 237, 0.3) 0%, rgba(0,0,0,0) 70%);
@@ -48,23 +40,14 @@
   }
   .orb:nth-child(1) { top: -10%; left: -10%; animation-delay: 0s; }
   .orb:nth-child(2) { bottom: -10%; right: -10%; background: radial-gradient(circle, rgba(236, 72, 153, 0.2) 0%, rgba(0,0,0,0) 70%); animation-delay: -5s; }
-
   @keyframes float { 0%, 100% { transform: translate(0,0); } 50% { transform: translate(30px, 20px); } }
 
-  /* 主容器 */
   .app-container {
     width: 100%; max-width: 480px; height: 100vh; max-height: 900px;
-    display: flex; flex-direction: column;
-    padding: 24px;
-    position: relative;
-    z-index: 10;
+    display: flex; flex-direction: column; padding: 24px; position: relative; z-index: 10;
   }
 
-  /* 頂部導航 */
-  header {
-    display: flex; justify-content: space-between; align-items: center;
-    margin-bottom: 20px;
-  }
+  header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
   .brand { font-size: 18px; font-weight: 800; letter-spacing: -0.5px; display: flex; align-items: center; gap: 8px; }
   .brand span { color: var(--primary); }
   
@@ -75,17 +58,13 @@
   }
   .btn-icon:hover { background: rgba(255,255,255,0.2); }
 
-  /* 分數板 */
-  .stats-bar {
-    display: flex; gap: 12px; justify-content: center; margin-bottom: 30px;
-  }
+  .stats-bar { display: flex; gap: 12px; justify-content: center; margin-bottom: 30px; }
   .stat-pill {
     background: rgba(0,0,0,0.3); border: 1px solid var(--card-border);
     padding: 6px 16px; border-radius: 99px; font-size: 13px; font-weight: 600;
     display: flex; align-items: center; gap: 6px;
   }
 
-  /* 題目區域 */
   .stage {
     flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center;
     position: relative; margin-bottom: 40px;
@@ -94,43 +73,45 @@
     font-size: 14px; color: var(--primary); font-weight: 600; text-transform: uppercase; letter-spacing: 1px;
     margin-bottom: 12px; background: rgba(139, 92, 246, 0.1); padding: 4px 12px; border-radius: 6px;
   }
+  
+  .q-wrapper { display: flex; align-items: center; gap: 12px; }
   .question-text {
     font-size: 72px; font-weight: 800; line-height: 1;
     text-shadow: 0 4px 20px rgba(0,0,0,0.5);
     transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
   }
   
-  /* 選項區域 */
-  .controls {
-    display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;
-    padding-bottom: 20px;
+  /* 播放按鈕小喇叭 */
+  .btn-play {
+    width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--card-border);
+    background: rgba(255,255,255,0.1); color: var(--text-muted); cursor: pointer;
+    display: grid; place-items: center; transition: 0.2s;
   }
+  .btn-play:hover { background: var(--primary); color: white; border-color: transparent; }
+  .btn-play.playing { animation: pulse 1s infinite; color: var(--primary); background: rgba(139, 92, 246, 0.1); border-color: var(--primary); }
+  @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(139, 92, 246, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(139, 92, 246, 0); } 100% { box-shadow: 0 0 0 0 rgba(139, 92, 246, 0); } }
+
+  .controls { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; padding-bottom: 20px; }
   .choice-btn {
-    background: rgba(255,255,255,0.05);
-    backdrop-filter: blur(10px);
-    border: 1px solid var(--card-border);
-    color: white; padding: 20px; border-radius: 20px;
+    background: rgba(255,255,255,0.05); backdrop-filter: blur(10px);
+    border: 1px solid var(--card-border); color: white; padding: 20px; border-radius: 20px;
     font-size: 20px; font-weight: 700; cursor: pointer;
-    transition: all 0.15s ease;
-    position: relative; overflow: hidden;
+    transition: all 0.15s ease; position: relative; overflow: hidden;
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
   }
   .choice-btn:active { transform: scale(0.96); }
   .choice-btn:hover { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.2); }
-  
   .choice-btn.correct { background: var(--correct); border-color: var(--correct); box-shadow: 0 0 20px rgba(16, 185, 129, 0.4); }
   .choice-btn.wrong { background: var(--wrong); border-color: var(--wrong); animation: shake 0.4s; }
   
   .hint-sub { font-size: 12px; font-weight: 400; opacity: 0.6; margin-top: 4px; display: block;}
 
-  /* 設置彈窗 (Modal) */
   .modal-overlay {
     position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(8px);
     z-index: 100; opacity: 0; pointer-events: none; transition: opacity 0.3s;
-    display: flex; align-items: flex-end; /* Mobile: sheet from bottom */
+    display: flex; align-items: flex-end;
   }
   @media(min-width: 500px) { .modal-overlay { align-items: center; justify-content: center; } }
-
   .modal-overlay.open { opacity: 1; pointer-events: auto; }
   
   .modal-card {
@@ -140,79 +121,52 @@
     max-height: 85vh; overflow-y: auto; border: 1px solid var(--card-border);
   }
   @media(min-width: 500px) { .modal-card { border-radius: 24px; transform: scale(0.95); } }
-  
   .modal-overlay.open .modal-card { transform: translateY(0); }
   @media(min-width: 500px) { .modal-overlay.open .modal-card { transform: scale(1); } }
 
   .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
   .modal-title { font-size: 20px; font-weight: 700; }
-  
-  /* 表單元件美化 */
   .form-group { margin-bottom: 20px; }
   .form-label { display: block; font-size: 13px; color: var(--text-muted); margin-bottom: 8px; font-weight: 600; }
   
-  select {
-    width: 100%; background: #2a273f; color: white; border: 1px solid var(--card-border);
-    padding: 12px; border-radius: 12px; font-size: 16px; appearance: none; outline: none;
-  }
-  
+  select { width: 100%; background: #2a273f; color: white; border: 1px solid var(--card-border); padding: 12px; border-radius: 12px; font-size: 16px; appearance: none; outline: none; }
   .toggle-row { display: flex; gap: 10px; background: #2a273f; padding: 4px; border-radius: 12px; }
-  .toggle-opt {
-    flex: 1; text-align: center; padding: 10px; border-radius: 8px; font-size: 14px;
-    cursor: pointer; opacity: 0.6; transition: 0.2s;
-  }
+  .toggle-opt { flex: 1; text-align: center; padding: 10px; border-radius: 8px; font-size: 14px; cursor: pointer; opacity: 0.6; transition: 0.2s; }
   .toggle-opt.active { background: var(--primary); color: white; opacity: 1; font-weight: 600; }
-  
-  .btn-primary {
-    width: 100%; background: var(--primary); color: white; border: none;
-    padding: 16px; border-radius: 16px; font-size: 16px; font-weight: 700;
-    cursor: pointer; margin-top: 10px;
-  }
-
-  /* 進度條 */
-  .timer-line {
-    position: absolute; top: 0; left: 0; height: 3px; background: var(--primary);
-    width: 0%; transition: width 0.1s linear; box-shadow: 0 0 10px var(--primary);
-  }
+  .btn-primary { width: 100%; background: var(--primary); color: white; border: none; padding: 16px; border-radius: 16px; font-size: 16px; font-weight: 700; cursor: pointer; margin-top: 10px; }
+  .timer-line { position: absolute; top: 0; left: 0; height: 3px; background: var(--primary); width: 0%; transition: width 0.1s linear; box-shadow: 0 0 10px var(--primary); }
 
   @keyframes shake { 10%, 90% { transform: translateX(-2px); } 20%, 80% { transform: translateX(2px); } }
-  
   .hidden { display: none !important; }
 </style>
 </head>
 <body>
 
-  <div class="orb"></div>
-  <div class="orb"></div>
+  <div class="orb"></div><div class="orb"></div>
   <div id="timerLine" class="timer-line"></div>
 
   <div class="app-container">
     <header>
-      <div class="brand">
-        <span>#</span> ChordPro
-      </div>
+      <div class="brand"><span>#</span> ChordPro</div>
       <div style="display:flex; gap:10px">
-        <button class="btn-icon" id="btnSettings" title="設定">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
-        </button>
+        <button class="btn-icon" id="btnSettings" title="設定"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg></button>
       </div>
     </header>
 
     <div class="stats-bar">
-      <div class="stat-pill" style="color:var(--correct)">
-        <span>✓</span> <span id="scoreOk">0</span>
-      </div>
-      <div class="stat-pill" style="color:var(--wrong)">
-        <span>✕</span> <span id="scoreBad">0</span>
-      </div>
-      <div class="stat-pill" style="color:#fbbf24">
-        <span>★</span> <span id="streak">0</span>
-      </div>
+      <div class="stat-pill" style="color:var(--correct)"><span>✓</span> <span id="scoreOk">0</span></div>
+      <div class="stat-pill" style="color:var(--wrong)"><span>✕</span> <span id="scoreBad">0</span></div>
+      <div class="stat-pill" style="color:#fbbf24"><span>★</span> <span id="streak">0</span></div>
     </div>
 
     <div class="stage">
       <div class="key-label" id="keyLabel">C MAJOR</div>
-      <div class="question-text" id="qText">?</div>
+      <div class="q-wrapper">
+        <div class="question-text" id="qText">?</div>
+        <button class="btn-play hidden" id="replayBtn" title="播放聲音">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
+        </button>
+      </div>
       <div style="margin-top:10px; opacity:0.5; font-size:14px" id="qSub">請按開始</div>
     </div>
 
@@ -223,67 +177,102 @@
 
   <div class="modal-overlay" id="settingsModal">
     <div class="modal-card">
-      <div class="modal-header">
-        <div class="modal-title">設定</div>
-        <button class="btn-icon" style="background:transparent; border:none;" id="closeSettings">✕</button>
-      </div>
+      <div class="modal-header"><div class="modal-title">設定</div><button class="btn-icon" style="background:transparent; border:none;" id="closeSettings">✕</button></div>
       
+      <div class="form-group"><label class="form-label">練習模式</label><div class="toggle-row"><div class="toggle-opt active" data-grp="mode" data-val="chordToDegree">和弦 ➜ 級數</div><div class="toggle-opt" data-grp="mode" data-val="degreeToChord">級數 ➜ 和弦</div></div></div>
+      <div class="form-group"><label class="form-label">主音設定 (Key)</label><select id="rootSelect"><option value="C">C Major</option><option value="G">G Major (1#)</option><option value="D">D Major (2#)</option><option value="A">A Major (3#)</option><option value="E">E Major (4#)</option><option value="B">B Major (5#)</option><option value="F#">F# Major (6#)</option><option value="C#">C# Major (7#)</option><option disabled>──────────</option><option value="F">F Major (1b)</option><option value="Bb">Bb Major (2b)</option><option value="Eb">Eb Major (3b)</option><option value="Ab">Ab Major (4b)</option><option value="Db">Db Major (5b)</option><option value="Gb">Gb Major (6b)</option><option value="Cb">Cb Major (7b)</option></select></div>
+      <div class="form-group"><label class="form-label">出題範圍</label><div class="toggle-row"><div class="toggle-opt active" data-grp="keymode" data-val="fixed">固定調性</div><div class="toggle-opt" data-grp="keymode" data-val="random">隨機切換</div></div></div>
       <div class="form-group">
-        <label class="form-label">練習模式</label>
-        <div class="toggle-row">
-          <div class="toggle-opt active" data-grp="mode" data-val="chordToDegree">和弦 ➜ 級數</div>
-          <div class="toggle-opt" data-grp="mode" data-val="degreeToChord">級數 ➜ 和弦</div>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px">
+          <label class="form-label" style="margin:0">聲音回饋 (Audio)</label>
+          <input type="checkbox" id="audioCheck" checked style="transform:scale(1.5)">
         </div>
-      </div>
-
-      <div class="form-group">
-        <label class="form-label">主音設定 (Key)</label>
-        <select id="rootSelect">
-          <option value="C">C Major</option>
-          <option value="G">G Major (1#)</option>
-          <option value="D">D Major (2#)</option>
-          <option value="A">A Major (3#)</option>
-          <option value="E">E Major (4#)</option>
-          <option value="B">B Major (5#)</option>
-          <option value="F#">F# Major (6#)</option>
-          <option value="C#">C# Major (7#)</option>
-          <option disabled>──────────</option>
-          <option value="F">F Major (1b)</option>
-          <option value="Bb">Bb Major (2b)</option>
-          <option value="Eb">Eb Major (3b)</option>
-          <option value="Ab">Ab Major (4b)</option>
-          <option value="Db">Db Major (5b)</option>
-          <option value="Gb">Gb Major (6b)</option>
-          <option value="Cb">Cb Major (7b)</option>
-        </select>
-      </div>
-
-      <div class="form-group">
-        <label class="form-label">出題範圍</label>
-        <div class="toggle-row">
-          <div class="toggle-opt active" data-grp="keymode" data-val="fixed">固定調性</div>
-          <div class="toggle-opt" data-grp="keymode" data-val="random">隨機切換</div>
-        </div>
-      </div>
-
-      <div class="form-group">
         <div style="display:flex; justify-content:space-between; align-items:center">
           <label class="form-label" style="margin:0">計時挑戰 (5秒)</label>
           <input type="checkbox" id="timerCheck" style="transform:scale(1.5)">
         </div>
       </div>
-
       <button class="btn-primary" id="resetBtn" style="background: #ef4444; margin-top:20px">重置分數</button>
-      
-      <div style="text-align:center; margin-top:20px; font-size:12px; color:var(--text-muted)">
-        訪問次數：<span id="visitCount">...</span>
-      </div>
+      <div style="text-align:center; margin-top:20px; font-size:12px; color:var(--text-muted)">訪問次數：<span id="visitCount">...</span></div>
     </div>
   </div>
 
 <script>
 (function(){
-  // --- 樂理邏輯 (修正後的精確版) ---
+  // ==========================================
+  // 🎵 AUDIO ENGINE (Web Audio API)
+  // ==========================================
+  const AudioEngine = {
+    ctx: null,
+    // Note Frequencies (Octave 4)
+    noteFreqs: {
+      'C': 261.63, 'C#': 277.18, 'Db': 277.18, 'D': 293.66, 'D#': 311.13, 'Eb': 311.13,
+      'E': 329.63, 'F': 349.23, 'F#': 369.99, 'Gb': 369.99, 'G': 392.00, 'G#': 415.30, 
+      'Ab': 415.30, 'A': 440.00, 'A#': 466.16, 'Bb': 466.16, 'B': 493.88, 'Cb': 493.88, // Cb=B
+      'E#': 349.23, // E#=F
+      'B#': 261.63 * 2 // B#=C(next octave)
+    },
+    
+    init: function() {
+      if(!this.ctx) {
+        this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if(this.ctx.state === 'suspended') {
+        this.ctx.resume();
+      }
+    },
+
+    playTone: function(freq, type='triangle', duration=0.8, startTime=0) {
+      if(!this.ctx) return;
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      
+      osc.type = type;
+      osc.frequency.value = freq;
+      
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+      
+      const now = this.ctx.currentTime + startTime;
+      
+      // Envelope
+      gain.gain.setValueAtTime(0, now);
+      gain.gain.linearRampToValueAtTime(0.3, now + 0.05); // Attack
+      gain.gain.exponentialRampToValueAtTime(0.001, now + duration); // Decay
+      
+      osc.start(now);
+      osc.stop(now + duration);
+    },
+
+    playChord: function(chordName) {
+      this.init();
+      // Parse chord name (e.g., "C", "F#m", "Gdim")
+      let root = chordName.replace(/m|°/g, ''); 
+      const isMinor = chordName.includes('m');
+      const isDim = chordName.includes('°');
+
+      let rootFreq = this.noteFreqs[root];
+      if(!rootFreq) return; // Fallback
+
+      // Calculate intervals (Semidtones)
+      // Major: 0, 4, 7
+      // Minor: 0, 3, 7
+      // Dim:   0, 3, 6
+      let thirdInterval = isMinor || isDim ? 3 : 4;
+      let fifthInterval = isDim ? 6 : 7;
+
+      const getFreq = (base, semi) => base * Math.pow(2, semi/12);
+      
+      // Play Triad
+      this.playTone(rootFreq, 'triangle', 1.2, 0);
+      this.playTone(getFreq(rootFreq, thirdInterval), 'triangle', 1.2, 0);
+      this.playTone(getFreq(rootFreq, fifthInterval), 'triangle', 1.2, 0);
+    }
+  };
+
+  // ==========================================
+  // 🎼 MUSIC THEORY LOGIC
+  // ==========================================
   const SCALE_DATA = {
     'C':  ['C', 'D', 'E', 'F', 'G', 'A', 'B'],
     'G':  ['G', 'A', 'B', 'C', 'D', 'E', 'F#'],
@@ -304,12 +293,25 @@
   const ROMAN = ["I","ii","iii","IV","V","vi","vii°"];
   const QUAL = ['maj','min','min','maj','maj','min','dim'];
 
-  // --- 狀態管理 ---
+  // --- Helpers ---
+  const formatNote = (str) => { if(!str) return ""; return str.replace(/b/g, '♭').replace(/#/g, '♯'); };
+  const rand = n => Math.floor(Math.random()*n);
+  const getTriads = (key) => {
+    let notes = SCALE_DATA[key] || SCALE_DATA['C'];
+    return notes.map((n, i) => {
+      const q = QUAL[i];
+      let suffix = q === 'min' ? 'm' : (q === 'dim' ? '°' : '');
+      return { degree: i, roman: ROMAN[i], name: n + suffix, plainName: n + suffix };
+    });
+  };
+
+  // --- STATE ---
   const state = {
-    mode: 'chordToDegree', // or degreeToChord
+    mode: 'chordToDegree',
     keymode: 'fixed',
     root: 'C',
     timerEnabled: false,
+    audioEnabled: true,
     score: { ok:0, bad:0, streak:0 },
     current: null,
     lock: false,
@@ -317,7 +319,7 @@
     started: false
   };
 
-  // --- DOM Elements ---
+  // --- DOM ---
   const el = {
     keyLabel: document.getElementById('keyLabel'),
     qText: document.getElementById('qText'),
@@ -327,30 +329,15 @@
     scoreBad: document.getElementById('scoreBad'),
     streak: document.getElementById('streak'),
     modal: document.getElementById('settingsModal'),
-    timerLine: document.getElementById('timerLine')
+    timerLine: document.getElementById('timerLine'),
+    replayBtn: document.getElementById('replayBtn')
   };
 
-  // --- Helper: 轉成漂亮符號 ---
-  // 這會將 "Bb" 轉為 "B♭"，將 "#" 轉為 "♯"
-  const formatNote = (str) => {
-    if(!str) return "";
-    return str.replace(/b/g, '♭').replace(/#/g, '♯');
-  };
-
-  const rand = n => Math.floor(Math.random()*n);
-  const getTriads = (key) => {
-    let notes = SCALE_DATA[key] || SCALE_DATA['C'];
-    return notes.map((n, i) => {
-      const q = QUAL[i];
-      let suffix = q === 'min' ? 'm' : (q === 'dim' ? '°' : '');
-      return { degree: i, roman: ROMAN[i], name: n + suffix };
-    });
-  };
-
-  // --- Core Game Logic ---
+  // --- GAME LOGIC ---
   function nextQuestion() {
     state.lock = false;
     stopTimer();
+    el.replayBtn.classList.add('hidden'); // Hide audio button initially
     
     // Determine Key
     let currentKey = state.root;
@@ -363,21 +350,16 @@
     const targetIdx = rand(7);
     const target = chords[targetIdx];
     
-    state.current = { key: currentKey, answerIdx: targetIdx, list: chords };
+    state.current = { key: currentKey, answerIdx: targetIdx, list: chords, target: target };
     
-    // UI Update: 使用 formatNote 讓 Bb 變 B♭
+    // UI Update
     el.keyLabel.textContent = formatNote(currentKey) + " MAJOR";
     
     // Animation reset
-    el.qText.style.transform = "scale(0.8)";
-    el.qText.style.opacity = "0";
-    setTimeout(() => {
-      el.qText.style.transform = "scale(1)";
-      el.qText.style.opacity = "1";
-    }, 50);
+    el.qText.style.transform = "scale(0.8)"; el.qText.style.opacity = "0";
+    setTimeout(() => { el.qText.style.transform = "scale(1)"; el.qText.style.opacity = "1"; }, 50);
 
     if(state.mode === 'chordToDegree') {
-      // 題目如果是和弦名，也做美化
       el.qText.textContent = formatNote(target.name);
       el.qSub.textContent = "它是第幾級？";
     } else {
@@ -386,28 +368,23 @@
     }
 
     renderChoices(chords);
-
     if(state.timerEnabled) startTimer();
   }
 
   function renderChoices(chords) {
     el.grid.innerHTML = '';
     let indices = [0,1,2,3,4,5,6];
-    if(state.mode === 'degreeToChord') {
-      indices.sort(() => Math.random() - 0.5);
-    }
+    if(state.mode === 'degreeToChord') indices.sort(() => Math.random() - 0.5);
 
     indices.forEach(idx => {
       const item = chords[idx];
       const btn = document.createElement('button');
       btn.className = 'choice-btn';
-      btn.dataset.idx = idx; // 標記正確答案的索引
+      btn.dataset.idx = idx;
       
       if(state.mode === 'chordToDegree') {
-        // 級數不用轉符號
         btn.innerHTML = `${item.roman}<span class="hint-sub">級數</span>`;
       } else {
-        // 選項是和弦名，使用 formatNote
         btn.innerHTML = `${formatNote(item.name)}<span class="hint-sub">和弦</span>`;
       }
       
@@ -423,18 +400,28 @@
 
     const isCorrect = idx === state.current.answerIdx;
     
+    // 答題後顯示播放按鈕
+    el.replayBtn.classList.remove('hidden');
+
     if(isCorrect) {
       btn.classList.add('correct');
       state.score.ok++;
       state.score.streak++;
       el.qSub.textContent = "Correct! 🎉";
-      setTimeout(nextQuestion, 800);
+      
+      // 🎵 Play Sound if Correct
+      if(state.audioEnabled) {
+        AudioEngine.playChord(state.current.target.plainName);
+        el.replayBtn.classList.add('playing');
+        setTimeout(()=>el.replayBtn.classList.remove('playing'), 800);
+      }
+
+      setTimeout(nextQuestion, 1200);
     } else {
       btn.classList.add('wrong');
       state.score.bad++;
       state.score.streak = 0;
       
-      // Highlight correct one by index
       const correctBtn = el.grid.querySelector(`button[data-idx="${state.current.answerIdx}"]`);
       if(correctBtn) correctBtn.classList.add('correct');
       
@@ -450,41 +437,28 @@
     el.streak.textContent = state.score.streak;
   }
 
-  // --- Timer ---
+  // --- TIMER ---
   function startTimer() {
-    el.timerLine.style.transition = 'none';
-    el.timerLine.style.width = '100%';
-    
-    // Force reflow
+    el.timerLine.style.transition = 'none'; el.timerLine.style.width = '100%';
     void el.timerLine.offsetWidth;
-    
-    el.timerLine.style.transition = 'width 5s linear';
-    el.timerLine.style.width = '0%';
+    el.timerLine.style.transition = 'width 5s linear'; el.timerLine.style.width = '0%';
     
     state.timer = setTimeout(() => {
       if(!state.lock) {
-        state.score.bad++;
-        state.score.streak = 0;
-        updateScore();
-        el.qSub.textContent = "時間到！";
-        state.lock = true;
-        // 逾時也顯示正確答案
+        state.score.bad++; state.score.streak = 0; updateScore();
+        el.qSub.textContent = "時間到！"; state.lock = true;
         const correctBtn = el.grid.querySelector(`button[data-idx="${state.current.answerIdx}"]`);
         if(correctBtn) correctBtn.classList.add('correct');
         setTimeout(nextQuestion, 1500);
       }
     }, 5000);
   }
-  
   function stopTimer() {
     clearTimeout(state.timer);
-    el.timerLine.style.transition = 'none';
-    el.timerLine.style.width = '0%';
+    el.timerLine.style.transition = 'none'; el.timerLine.style.width = '0%';
   }
 
-  // --- UI Interactivity ---
-  
-  // Settings Logic
+  // --- EVENTS ---
   const toggleOpts = document.querySelectorAll('.toggle-opt');
   toggleOpts.forEach(opt => {
     opt.addEventListener('click', () => {
@@ -492,7 +466,7 @@
       document.querySelectorAll(`.toggle-opt[data-grp="${grp}"]`).forEach(o => o.classList.remove('active'));
       opt.classList.add('active');
       state[grp] = opt.dataset.val;
-      if(state.started) nextQuestion(); // Immediate apply
+      if(state.started) nextQuestion();
     });
   });
 
@@ -500,41 +474,45 @@
     state.root = e.target.value;
     if(state.started && state.keymode === 'fixed') nextQuestion();
   });
-
   document.getElementById('timerCheck').addEventListener('change', (e) => {
     state.timerEnabled = e.target.checked;
     if(state.started) nextQuestion();
   });
+  document.getElementById('audioCheck').addEventListener('change', (e) => {
+    state.audioEnabled = e.target.checked;
+  });
 
   document.getElementById('startBtn').addEventListener('click', () => {
+    AudioEngine.init(); // Initialize Audio Context on first click
     state.started = true;
     nextQuestion();
   });
-
-  document.getElementById('resetBtn').addEventListener('click', () => {
-    state.score = { ok:0, bad:0, streak:0 };
-    updateScore();
+  
+  el.replayBtn.addEventListener('click', () => {
+    if(state.current && state.audioEnabled) {
+        AudioEngine.playChord(state.current.target.plainName);
+        el.replayBtn.classList.add('playing');
+        setTimeout(()=>el.replayBtn.classList.remove('playing'), 800);
+    }
   });
 
-  // Modal Controls
+  document.getElementById('resetBtn').addEventListener('click', () => {
+    state.score = { ok:0, bad:0, streak:0 }; updateScore();
+  });
+
   const modal = document.getElementById('settingsModal');
   document.getElementById('btnSettings').onclick = () => modal.classList.add('open');
   document.getElementById('closeSettings').onclick = () => modal.classList.remove('open');
-  modal.addEventListener('click', (e) => {
-    if(e.target === modal) modal.classList.remove('open');
-  });
+  modal.addEventListener('click', (e) => { if(e.target === modal) modal.classList.remove('open'); });
 
   // Init
   loadVisits();
-  
   function loadVisits(){
-    // 模擬讀取
     const count = localStorage.getItem('chord_visits') || 0;
     const newCount = Number(count) + 1;
     localStorage.setItem('chord_visits', newCount);
     document.getElementById('visitCount').textContent = newCount;
   }
-
 })();
 </script>
 </body>
