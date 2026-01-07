@@ -2,640 +2,539 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>和弦級數練習（大調）</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
+<title>Chord Mastery Pro</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
 <style>
-  :root{
-    --bg:#0f1220; --panel:#151933; --ink:#e8ecff; --muted:#aab0d6; --accent:#6ea8ff;
-    --ok:#2ecc71; --bad:#ff6b6b; --btn:#20264d; --btn-hover:#28306a; --chip:#1c2145; --border:#2a2f58;
+  :root {
+    --bg-grad: radial-gradient(at 0% 0%, hsla(253,16%,7%,1) 0, transparent 50%), 
+               radial-gradient(at 50% 0%, hsla(225,39%,30%,1) 0, transparent 50%), 
+               radial-gradient(at 100% 0%, hsla(339,49%,30%,1) 0, transparent 50%);
+    --card-bg: rgba(30, 35, 60, 0.7);
+    --card-border: rgba(255, 255, 255, 0.1);
+    --primary: #8b5cf6; /* Violet */
+    --primary-glow: rgba(139, 92, 246, 0.5);
+    --correct: #10b981;
+    --wrong: #ef4444;
+    --text-main: #ffffff;
+    --text-muted: #94a3b8;
+    --font: 'Inter', system-ui, sans-serif;
   }
-  *{box-sizing:border-box}
-  body{
-    margin:0; font-family: ui-sans-serif,-apple-system,"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,Arial,sans-serif;
-    background: radial-gradient(1200px 600px at 80% -10%, #1a1f45 0%, #0f1220 60%);
-    color:var(--ink);
-    padding-bottom:92px; /* 讓內容不被底部控制列遮住 */
-  }
-  .wrap{max-width:1100px; margin:32px auto; padding:0 16px}
-  header{display:flex; gap:16px; align-items:center; margin-bottom:16px}
-  h1{font-size:22px; margin:0}
-  .badge{font-size:12px; padding:4px 8px; border-radius:999px; background:var(--chip); color:var(--muted); border:1px solid var(--border)}
-  .panel{
-    background:linear-gradient(180deg, rgba(255,255,255,0.03), rgba(0,0,0,0.05)), var(--panel);
-    border:1px solid var(--border); border-radius:16px; padding:16px; margin-bottom:14px
-  }
-  .grid{display:grid; gap:12px}
-  @media (min-width:900px){ .grid-2{grid-template-columns: 1fr 1fr} }
-  label{font-size:13px; color:var(--muted)}
-  select, .seg, button, .check, input[type="number"]{
-    background:var(--btn); color:var(--ink); border:1px solid var(--border); border-radius:10px; padding:10px 12px; font-size:15px
-  }
-  input[type="number"]{width:90px}
-  .check{display:flex; gap:8px; align-items:center; padding:8px 12px}
-  select:focus, button:focus, input[type="number"]:focus{outline:2px solid var(--accent)}
-  .seg{display:inline-flex; gap:6px; padding:6px; align-items:center}
-  .seg input{display:none}
-  .seg label{
-    color:var(--ink); background:transparent; border:1px solid var(--border);
-    padding:8px 12px; border-radius:8px; cursor:pointer; user-select:none
-  }
-  .seg input:checked + label{background:var(--accent); border-color:transparent; color:#0c1226; font-weight:700}
-  .row{display:flex; gap:12px; flex-wrap:wrap; align-items:center}
-  .grow{flex:1}
-  .kbd{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-size:12px; color:var(--muted);
-        border:1px solid var(--border); padding:3px 6px; border-radius:6px; background:var(--chip)}
-  .question{
-    display:flex; align-items:center; justify-content:space-between; gap:12px; min-height:64px;
-    border:1px dashed var(--border); border-radius:12px; padding:12px; background:rgba(255,255,255,0.02)
-  }
-  .q-title{font-size:18px; line-height:1.3}
-  .q-meta{color:var(--muted); font-size:13px}
-  .big{font-size:28px; font-weight:800; letter-spacing:0.5px}
-  .choices{display:grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap:10px; margin-top:12px}
-  @media (min-width:680px){ .choices{grid-template-columns: repeat(4, minmax(0,1fr));} }
-  .choice{
-    padding:12px; background:var(--btn); border:1px solid var(--border); border-radius:10px; cursor:pointer; text-align:center;
-    transition:transform .06s ease, background .15s ease; position:relative
-  }
-  .choice:hover{background:var(--btn-hover); transform:translateY(-1px)}
-  .choice.correct{background:rgba(46, 204, 113, .15); border-color:rgba(46, 204, 113, .4)}
-  .choice.wrong{background:rgba(255,107,107,.2); border-color:rgba(255,107,107,.5)}
-  .idxHint{ position:absolute; top:6px; left:8px; font-size:11px; opacity:.7}
-  .result{display:flex; align-items:center; gap:10px; font-size:15px; margin-top:8px}
-  .dot{width:10px; height:10px; border-radius:50%}
-  .dot.ok{background:var(--ok)} .dot.bad{background:var(--bad)}
-  .score{display:flex; gap:10px; flex-wrap:wrap; font-size:14px; color:var(--muted)}
-  .score strong{color:var(--ink)}
-  .list{display:flex; flex-wrap:wrap; gap:8px; margin-top:8px}
-  .chip{padding:6px 10px; border-radius:999px; background:var(--chip); border:1px solid var(--border); font-size:13px}
-  .muted{color:var(--muted)}
-  details summary{cursor:pointer; user-select:none; color:var(--muted)}
-  .footer{color:var(--muted); font-size:12px; margin-top:12px}
 
-  /* 計時器顯示 */
-  .timer{ margin-top:10px; }
-  .tline{ height:10px; border-radius:999px; background:#22284d; border:1px solid var(--border); overflow:hidden }
-  .tbar{ height:100%; background:var(--accent); width:0% }
-  .tmeta{display:flex; justify-content:space-between; font-size:12px; color:var(--muted); margin-top:6px}
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  
+  body {
+    margin: 0;
+    font-family: var(--font);
+    background-color: #0f172a;
+    background-image: var(--bg-grad);
+    background-attachment: fixed;
+    background-size: cover;
+    color: var(--text-main);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
 
-  /* 底部固定控制列 */
-  .dock{
-    position:fixed; left:0; right:0; bottom:0; z-index:50;
-    background:rgba(21,25,51,.88); backdrop-filter: blur(10px);
-    border-top:1px solid var(--border);
+  /* 動態背景光暈 */
+  .orb {
+    position: absolute; width: 50vh; height: 50vh;
+    background: radial-gradient(circle, rgba(124, 58, 237, 0.3) 0%, rgba(0,0,0,0) 70%);
+    border-radius: 50%; z-index: -1; animation: float 10s infinite ease-in-out;
   }
-  .dock-inner{
-    max-width:1100px; margin:0 auto; padding:10px 16px; display:flex; gap:12px; align-items:center; flex-wrap:wrap
-  }
-  .btn{padding:10px 14px; border-radius:10px; border:1px solid var(--border); background:var(--btn); color:var(--ink); cursor:pointer}
-  .btn.primary{background:var(--accent); border-color:transparent; color:#0c1226; font-weight:800}
-  .btn.ghost{background:transparent}
+  .orb:nth-child(1) { top: -10%; left: -10%; animation-delay: 0s; }
+  .orb:nth-child(2) { bottom: -10%; right: -10%; background: radial-gradient(circle, rgba(236, 72, 153, 0.2) 0%, rgba(0,0,0,0) 70%); animation-delay: -5s; }
 
-  /* 訪問次數（純文字） */
-  .visits{
-    max-width:1100px; margin:16px auto; padding:0 16px; text-align:center; color:var(--muted); font-size:13px;
+  @keyframes float { 0%, 100% { transform: translate(0,0); } 50% { transform: translate(30px, 20px); } }
+
+  /* 主容器 */
+  .app-container {
+    width: 100%; max-width: 480px; height: 100vh; max-height: 900px;
+    display: flex; flex-direction: column;
+    padding: 24px;
+    position: relative;
+    z-index: 10;
   }
-  .visits strong{color:var(--ink)}
-  .visits .fallback{margin-top:6px; opacity:.8}
+
+  /* 頂部導航 */
+  header {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 20px;
+  }
+  .brand { font-size: 18px; font-weight: 800; letter-spacing: -0.5px; display: flex; align-items: center; gap: 8px; }
+  .brand span { color: var(--primary); }
+  
+  .btn-icon {
+    background: rgba(255,255,255,0.1); border: 1px solid var(--card-border);
+    color: white; width: 40px; height: 40px; border-radius: 12px;
+    display: grid; place-items: center; cursor: pointer; transition: 0.2s;
+  }
+  .btn-icon:hover { background: rgba(255,255,255,0.2); }
+
+  /* 分數板 */
+  .stats-bar {
+    display: flex; gap: 12px; justify-content: center; margin-bottom: 30px;
+  }
+  .stat-pill {
+    background: rgba(0,0,0,0.3); border: 1px solid var(--card-border);
+    padding: 6px 16px; border-radius: 99px; font-size: 13px; font-weight: 600;
+    display: flex; align-items: center; gap: 6px;
+  }
+
+  /* 題目區域 */
+  .stage {
+    flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center;
+    position: relative; margin-bottom: 40px;
+  }
+  .key-label {
+    font-size: 14px; color: var(--primary); font-weight: 600; text-transform: uppercase; letter-spacing: 1px;
+    margin-bottom: 12px; background: rgba(139, 92, 246, 0.1); padding: 4px 12px; border-radius: 6px;
+  }
+  .question-text {
+    font-size: 72px; font-weight: 800; line-height: 1;
+    text-shadow: 0 4px 20px rgba(0,0,0,0.5);
+    transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  
+  /* 選項區域 */
+  .controls {
+    display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;
+    padding-bottom: 20px;
+  }
+  .choice-btn {
+    background: rgba(255,255,255,0.05);
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--card-border);
+    color: white; padding: 20px; border-radius: 20px;
+    font-size: 20px; font-weight: 700; cursor: pointer;
+    transition: all 0.15s ease;
+    position: relative; overflow: hidden;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  }
+  .choice-btn:active { transform: scale(0.96); }
+  .choice-btn:hover { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.2); }
+  
+  .choice-btn.correct { background: var(--correct); border-color: var(--correct); box-shadow: 0 0 20px rgba(16, 185, 129, 0.4); }
+  .choice-btn.wrong { background: var(--wrong); border-color: var(--wrong); animation: shake 0.4s; }
+  
+  .hint-sub { font-size: 12px; font-weight: 400; opacity: 0.6; margin-top: 4px; display: block;}
+
+  /* 設置彈窗 (Modal) */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(8px);
+    z-index: 100; opacity: 0; pointer-events: none; transition: opacity 0.3s;
+    display: flex; align-items: flex-end; /* Mobile: sheet from bottom */
+  }
+  @media(min-width: 500px) { .modal-overlay { align-items: center; justify-content: center; } }
+
+  .modal-overlay.open { opacity: 1; pointer-events: auto; }
+  
+  .modal-card {
+    background: #1e1b2e; width: 100%; max-width: 420px;
+    border-radius: 24px 24px 0 0; padding: 24px;
+    transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    max-height: 85vh; overflow-y: auto; border: 1px solid var(--card-border);
+  }
+  @media(min-width: 500px) { .modal-card { border-radius: 24px; transform: scale(0.95); } }
+  
+  .modal-overlay.open .modal-card { transform: translateY(0); }
+  @media(min-width: 500px) { .modal-overlay.open .modal-card { transform: scale(1); } }
+
+  .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+  .modal-title { font-size: 20px; font-weight: 700; }
+  
+  /* 表單元件美化 */
+  .form-group { margin-bottom: 20px; }
+  .form-label { display: block; font-size: 13px; color: var(--text-muted); margin-bottom: 8px; font-weight: 600; }
+  
+  select {
+    width: 100%; background: #2a273f; color: white; border: 1px solid var(--card-border);
+    padding: 12px; border-radius: 12px; font-size: 16px; appearance: none; outline: none;
+  }
+  
+  .toggle-row { display: flex; gap: 10px; background: #2a273f; padding: 4px; border-radius: 12px; }
+  .toggle-opt {
+    flex: 1; text-align: center; padding: 10px; border-radius: 8px; font-size: 14px;
+    cursor: pointer; opacity: 0.6; transition: 0.2s;
+  }
+  .toggle-opt.active { background: var(--primary); color: white; opacity: 1; font-weight: 600; }
+  
+  .btn-primary {
+    width: 100%; background: var(--primary); color: white; border: none;
+    padding: 16px; border-radius: 16px; font-size: 16px; font-weight: 700;
+    cursor: pointer; margin-top: 10px;
+  }
+
+  /* 進度條 */
+  .timer-line {
+    position: absolute; top: 0; left: 0; height: 3px; background: var(--primary);
+    width: 0%; transition: width 0.1s linear; box-shadow: 0 0 10px var(--primary);
+  }
+
+  @keyframes shake { 10%, 90% { transform: translateX(-2px); } 20%, 80% { transform: translateX(2px); } }
+  
+  .hidden { display: none !important; }
 </style>
 </head>
 <body>
-  <div class="wrap">
+
+  <div class="orb"></div>
+  <div class="orb"></div>
+  <div id="timerLine" class="timer-line"></div>
+
+  <div class="app-container">
     <header>
-      <h1>和弦級數練習（大調）</h1>
-      <span class="badge">I ii iii IV V vi vii°</span>
-      <span class="badge">立即判斷</span>
-      <span class="badge">鍵盤 1–7 依畫面順序</span>
+      <div class="brand">
+        <span>#</span> ChordPro
+      </div>
+      <div style="display:flex; gap:10px">
+        <button class="btn-icon" id="btnSettings" title="設定">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+        </button>
+      </div>
     </header>
 
-    <div class="panel grid grid-2" id="controls">
-      <div class="grid">
-        <div>
-          <label>練習模式</label><br/>
-          <div class="seg" role="tablist" aria-label="練習模式">
-            <input type="radio" name="mode" id="m1" value="chordToDegree" checked />
-            <label for="m1">和弦 ➜ 級數</label>
-            <input type="radio" name="mode" id="m2" value="degreeToChord" />
-            <label for="m2">級數 ➜ 和弦</label>
-          </div>
-        </div>
-
-        <div class="row">
-          <div class="grow">
-            <label for="root">主音（Key Root）</label>
-            <select id="root">
-              <option>C</option>
-              <option>C#</option><option>Db</option>
-              <option>D</option>
-              <option>D#</option><option>Eb</option>
-              <option>E</option>
-              <option>F</option>
-              <option>F#</option><option>Gb</option>
-              <option>G</option>
-              <option>G#</option><option>Ab</option>
-              <option>A</option>
-              <option>A#</option><option>Bb</option>
-              <option>B</option>
-            </select>
-          </div>
-
-          <div class="grow">
-            <label>出題方式</label><br/>
-            <div class="seg">
-              <input type="radio" name="keymode" id="kfix" value="fixed" checked />
-              <label for="kfix">固定調性</label>
-              <input type="radio" name="keymode" id="krand" value="random" />
-              <label for="krand">每題隨機調性</label>
-            </div>
-          </div>
-        </div>
-
-        <div class="row">
-          <label class="check" title="避免用按鈕位置作答">
-            <input type="checkbox" id="shuffleChoices" checked />
-            <span id="shuffleText">隨機排列選項（此模式不打亂）</span>
-          </label>
-        </div>
-
-        <div class="row">
-          <label class="check" title="逾時自動算錯並換題">
-            <input type="checkbox" id="timedMode" />
-            <span>計時模式（5 秒）</span>
-          </label>
-          <div class="row" style="gap:6px">
-            <label for="timeLimit" class="muted">秒數</label>
-            <input type="number" id="timeLimit" min="3" max="60" value="5" />
-          </div>
-          <button class="btn ghost" id="pauseBtn" disabled>暫停</button>
-        </div>
-
-        <div class="score" id="score">
-          <div>✅ 答對：<strong id="okCnt">0</strong></div>
-          <div>❌ 答錯：<strong id="badCnt">0</strong></div>
-          <div>🔥 連續：<strong id="streak">0</strong></div>
-        </div>
+    <div class="stats-bar">
+      <div class="stat-pill" style="color:var(--correct)">
+        <span>✓</span> <span id="scoreOk">0</span>
       </div>
-
-      <div class="grid">
-        <div>
-          <label>此調的 7 個和弦（參考）</label>
-          <div id="overview" class="list"></div>
-          <div class="footer">＊大調：I ii iii IV V vi vii°</div>
-
-          <div class="timer" id="timerBox" hidden>
-            <div class="tline"><div class="tbar" id="tbar"></div></div>
-            <div class="tmeta">
-              <span id="tlabel" class="muted">剩餘：—</span>
-              <span class="muted">逾時自動算錯</span>
-            </div>
-          </div>
-        </div>
+      <div class="stat-pill" style="color:var(--wrong)">
+        <span>✕</span> <span id="scoreBad">0</span>
+      </div>
+      <div class="stat-pill" style="color:#fbbf24">
+        <span>★</span> <span id="streak">0</span>
       </div>
     </div>
 
-    <div class="panel">
-      <div class="question" id="qbox">
-        <div>
-          <div class="q-meta" id="qKey">調性：</div>
-          <div class="q-title">題目：<span class="big" id="qText">按下方「開始」出題</span></div>
-        </div>
-        <div>
-          <span class="kbd">1–7</span>
-        </div>
-      </div>
-      <div id="choices" class="choices" aria-label="選項"></div>
-      <div class="result" id="result" hidden>
-        <span class="dot" id="rDot"></span>
-        <span id="rText"></span>
-      </div>
+    <div class="stage">
+      <div class="key-label" id="keyLabel">C MAJOR</div>
+      <div class="question-text" id="qText">?</div>
+      <div style="margin-top:10px; opacity:0.5; font-size:14px" id="qSub">請按開始</div>
     </div>
 
-    <div class="panel">
-      <details>
-        <summary>說明 / 小提醒</summary>
-        <ul>
-          <li>目前僅提供「大調」。</li>
-          <li>僅在「級數 ➜ 和弦」時會依勾選狀態打亂選項；「和弦 ➜ 級數」固定 I ii iii IV V vi vii° 順序。</li>
-          <li>計時模式：逾時視同答錯並自動換題，可暫停 / 繼續。</li>
-          <li>鍵盤：<span class="kbd">1–7</span> 依畫面順序作答、<span class="kbd">N</span> 下一題、<span class="kbd">P</span> 暫停/繼續、<span class="kbd">L</span> 切換總覽。</li>
-        </ul>
-      </details>
-    </div>
-
-    <div class="footer muted">© 和弦級數練習｜單檔版，離線可用。</div>
-  </div>
-
-  <!-- ✅ 訪問次數（純文字顯示，帶徽章備援） -->
-  <div class="visits" id="visitsBox" aria-live="polite">
-    <span>已訪問：<strong id="visitText">—</strong> 次</span>
-    <div class="fallback" id="visitFallback" hidden>
-      <img src="https://hits.seeyoufarm.com/api/count/incr/badge.svg?url=https%3A%2F%2Fenoooch0921.github.io%2Fchord-degree-trainer&count_bg=%2379C83D&title_bg=%23555555&icon=&icon_color=%23E7E7E7&title=visits&edge_flat=false" alt="訪問次數徽章"/>
+    <div class="controls" id="choicesGrid">
+      <button class="choice-btn" style="grid-column: 1/-1" id="startBtn">開始練習</button>
     </div>
   </div>
 
-  <!-- 底部固定控制列 -->
-  <div class="dock">
-    <div class="dock-inner">
-      <button class="btn" id="toggleList">顯示 / 隱藏總覽</button>
-      <button class="btn ghost" id="resetScore">重置分數</button>
-      <div class="grow"></div>
-      <button class="btn" id="nextBtn">開始</button>
-      <button class="btn primary" id="nextBtn2">下一題</button>
+  <div class="modal-overlay" id="settingsModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title">設定</div>
+        <button class="btn-icon" style="background:transparent; border:none;" id="closeSettings">✕</button>
+      </div>
+      
+      <div class="form-group">
+        <label class="form-label">練習模式</label>
+        <div class="toggle-row">
+          <div class="toggle-opt active" data-grp="mode" data-val="chordToDegree">和弦 ➜ 級數</div>
+          <div class="toggle-opt" data-grp="mode" data-val="degreeToChord">級數 ➜ 和弦</div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">主音設定 (Key)</label>
+        <select id="rootSelect">
+          <option value="C">C Major</option>
+          <option value="G">G Major (1#)</option>
+          <option value="D">D Major (2#)</option>
+          <option value="A">A Major (3#)</option>
+          <option value="E">E Major (4#)</option>
+          <option value="B">B Major (5#)</option>
+          <option value="F#">F# Major (6#)</option>
+          <option value="C#">C# Major (7#)</option>
+          <option disabled>──────────</option>
+          <option value="F">F Major (1b)</option>
+          <option value="Bb">Bb Major (2b)</option>
+          <option value="Eb">Eb Major (3b)</option>
+          <option value="Ab">Ab Major (4b)</option>
+          <option value="Db">Db Major (5b)</option>
+          <option value="Gb">Gb Major (6b)</option>
+          <option value="Cb">Cb Major (7b)</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">出題範圍</label>
+        <div class="toggle-row">
+          <div class="toggle-opt active" data-grp="keymode" data-val="fixed">固定調性</div>
+          <div class="toggle-opt" data-grp="keymode" data-val="random">隨機切換</div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <div style="display:flex; justify-content:space-between; align-items:center">
+          <label class="form-label" style="margin:0">計時挑戰 (5秒)</label>
+          <input type="checkbox" id="timerCheck" style="transform:scale(1.5)">
+        </div>
+      </div>
+
+      <button class="btn-primary" id="resetBtn" style="background: #ef4444; margin-top:20px">重置分數</button>
+      
+      <div style="text-align:center; margin-top:20px; font-size:12px; color:var(--text-muted)">
+        訪問次數：<span id="visitCount">...</span>
+      </div>
     </div>
   </div>
 
 <script>
 (function(){
-  // ---------- 大調資料 ----------
-  const NOTE_TO_PC = {
-    'C':0,'B#':0,'C#':1,'Db':1,'D':2,'D#':3,'Eb':3,'E':4,'Fb':4,'F':5,'E#':5,
-    'F#':6,'Gb':6,'G':7,'G#':8,'Ab':8,'A':9,'A#':10,'Bb':10,'B':11,'Cb':11
+  // --- 樂理邏輯 (修正後的精確版) ---
+  const SCALE_DATA = {
+    'C':  ['C', 'D', 'E', 'F', 'G', 'A', 'B'],
+    'G':  ['G', 'A', 'B', 'C', 'D', 'E', 'F#'],
+    'D':  ['D', 'E', 'F#', 'G', 'A', 'B', 'C#'],
+    'A':  ['A', 'B', 'C#', 'D', 'E', 'F#', 'G#'],
+    'E':  ['E', 'F#', 'G#', 'A', 'B', 'C#', 'D#'],
+    'B':  ['B', 'C#', 'D#', 'E', 'F#', 'G#', 'A#'],
+    'F#': ['F#', 'G#', 'A#', 'B', 'C#', 'D#', 'E#'],
+    'C#': ['C#', 'D#', 'E#', 'F#', 'G#', 'A#', 'B#'],
+    'F':  ['F', 'G', 'A', 'Bb', 'C', 'D', 'E'],
+    'Bb': ['Bb', 'C', 'D', 'Eb', 'F', 'G', 'A'],
+    'Eb': ['Eb', 'F', 'G', 'Ab', 'Bb', 'C', 'D'],
+    'Ab': ['Ab', 'Bb', 'C', 'Db', 'Eb', 'F', 'G'],
+    'Db': ['Db', 'Eb', 'F', 'Gb', 'Ab', 'Bb', 'C'],
+    'Gb': ['Gb', 'Ab', 'Bb', 'Cb', 'Db', 'Eb', 'F'],
+    'Cb': ['Cb', 'Db', 'Eb', 'Fb', 'Gb', 'Ab', 'Bb']
   };
-  const NAMES_SHARP = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
-  const NAMES_FLAT  = ['C','Db','D','Eb','E','F','Gb','G','Ab','A','Bb','B'];
+  const ROMAN = ["I","ii","iii","IV","V","vi","vii°"];
+  const QUAL = ['maj','min','min','maj','maj','min','dim'];
 
-  const STEPS_MAJOR = [0,2,4,5,7,9,11];
-  const ROMAN_MAJOR = ["I","ii","iii","IV","V","vi","vii°"];
-  const QUAL_MAJOR  = ['maj','min','min','maj','maj','min','dim'];
-  const MAJOR_FLAT_PREF = new Set(['F','Bb','Eb','Ab','Db']);
-
-  // ---------- 小工具 ----------
-  const rand = (n)=> Math.floor(Math.random()*n);
-  const pick = (arr)=> arr[rand(arr.length)];
-  function pcToName(pc, preferSharps){ return (preferSharps?NAMES_SHARP:NAMES_FLAT)[((pc%12)+12)%12]; }
-  function parseRootName(s){ return NOTE_TO_PC[s] ?? 0; }
-  function guessPreferSharps(rootStr){
-    if (rootStr.includes('b')) return false;
-    if (rootStr.includes('#')) return true;
-    const name = pcToName(parseRootName(rootStr), true);
-    if (MAJOR_FLAT_PREF.has(name.replace('#',''))) return false;
-    return true;
-  }
-  function triadsMajor(rootName){
-    const rootPC = parseRootName(rootName);
-    const preferSharps = guessPreferSharps(rootName);
-    const chords = STEPS_MAJOR.map((st,i)=>{
-      const pc = (rootPC + st) % 12;
-      let name = pcToName(pc, preferSharps);
-      const q = QUAL_MAJOR[i];
-      if (q==='min') name += 'm';
-      else if (q==='dim') name += '°';
-      return { degree:i, roman:ROMAN_MAJOR[i], name, quality:q, pc };
-    });
-    return { chords };
-  }
-  function shuffledIndices(n){
-    const a = Array.from({length:n}, (_,i)=>i);
-    for(let i=n-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; }
-    return a;
-  }
-
-  // ---------- DOM ----------
-  const els = {
-    mode: ()=> document.querySelector('input[name="mode"]:checked').value,
-    keymode: ()=> document.querySelector('input[name="keymode"]:checked').value,
-    root: document.getElementById('root'),
-    overview: document.getElementById('overview'),
-    qKey: document.getElementById('qKey'),
-    qText: document.getElementById('qText'),
-    choices: document.getElementById('choices'),
-    result: document.getElementById('result'),
-    rDot: document.getElementById('rDot'),
-    rText: document.getElementById('rText'),
-    okCnt: document.getElementById('okCnt'),
-    badCnt: document.getElementById('badCnt'),
-    streak: document.getElementById('streak'),
-    toggleList: document.getElementById('toggleList'),
-    resetScore: document.getElementById('resetScore'),
-    qbox: document.getElementById('qbox'),
-    shuffle: document.getElementById('shuffleChoices'),
-    shuffleText: document.getElementById('shuffleText'),
-    // 計時
-    timedMode: document.getElementById('timedMode'),
-    timeLimit: document.getElementById('timeLimit'),
-    timerBox: document.getElementById('timerBox'),
-    tbar: document.getElementById('tbar'),
-    tlabel: document.getElementById('tlabel'),
-    pauseBtn: document.getElementById('pauseBtn'),
-    // 底部控制
-    nextBtn: document.getElementById('nextBtn'),
-    nextBtn2: document.getElementById('nextBtn2'),
-    // 模式切換
-    m1: document.getElementById('m1'),
-    m2: document.getElementById('m2'),
-    // 訪問統計
-    visitText: document.getElementById('visitText'),
-    visitFallback: document.getElementById('visitFallback'),
-  };
-
-  // ---------- 狀態 ----------
+  // --- 狀態管理 ---
   const state = {
-    ok:0, bad:0, streak:0,
-    lock:false,
-    current:null,
-    showList:true,
-    // 計時狀態
-    timer: { timeoutId:null, intervalId:null, endAt:0, remainingMs:0, paused:false, running:false }
+    mode: 'chordToDegree', // or degreeToChord
+    keymode: 'fixed',
+    root: 'C',
+    timerEnabled: false,
+    score: { ok:0, bad:0, streak:0 },
+    current: null,
+    lock: false,
+    timer: null,
+    started: false
   };
 
-  function updateScoreboard(){
-    els.okCnt.textContent = state.ok;
-    els.badCnt.textContent = state.bad;
-    els.streak.textContent = state.streak;
+  // --- DOM Elements ---
+  const el = {
+    keyLabel: document.getElementById('keyLabel'),
+    qText: document.getElementById('qText'),
+    qSub: document.getElementById('qSub'),
+    grid: document.getElementById('choicesGrid'),
+    scoreOk: document.getElementById('scoreOk'),
+    scoreBad: document.getElementById('scoreBad'),
+    streak: document.getElementById('streak'),
+    modal: document.getElementById('settingsModal'),
+    timerLine: document.getElementById('timerLine')
+  };
+
+  // --- Helper: 轉成漂亮符號 ---
+  // 這會將 "Bb" 轉為 "B♭"，將 "#" 轉為 "♯"
+  const formatNote = (str) => {
+    if(!str) return "";
+    return str.replace(/b/g, '♭').replace(/#/g, '♯');
+  };
+
+  const rand = n => Math.floor(Math.random()*n);
+  const getTriads = (key) => {
+    let notes = SCALE_DATA[key] || SCALE_DATA['C'];
+    return notes.map((n, i) => {
+      const q = QUAL[i];
+      let suffix = q === 'min' ? 'm' : (q === 'dim' ? '°' : '');
+      return { degree: i, roman: ROMAN[i], name: n + suffix };
+    });
+  };
+
+  // --- Core Game Logic ---
+  function nextQuestion() {
+    state.lock = false;
+    stopTimer();
+    
+    // Determine Key
+    let currentKey = state.root;
+    if(state.keymode === 'random') {
+      const keys = Object.keys(SCALE_DATA);
+      currentKey = keys[rand(keys.length)];
+    }
+    
+    const chords = getTriads(currentKey);
+    const targetIdx = rand(7);
+    const target = chords[targetIdx];
+    
+    state.current = { key: currentKey, answerIdx: targetIdx, list: chords };
+    
+    // UI Update: 使用 formatNote 讓 Bb 變 B♭
+    el.keyLabel.textContent = formatNote(currentKey) + " MAJOR";
+    
+    // Animation reset
+    el.qText.style.transform = "scale(0.8)";
+    el.qText.style.opacity = "0";
+    setTimeout(() => {
+      el.qText.style.transform = "scale(1)";
+      el.qText.style.opacity = "1";
+    }, 50);
+
+    if(state.mode === 'chordToDegree') {
+      // 題目如果是和弦名，也做美化
+      el.qText.textContent = formatNote(target.name);
+      el.qSub.textContent = "它是第幾級？";
+    } else {
+      el.qText.textContent = target.roman;
+      el.qSub.textContent = "這是什麼和弦？";
+    }
+
+    renderChoices(chords);
+
+    if(state.timerEnabled) startTimer();
   }
 
-  function renderOverview(){
-    const { chords } = triadsMajor(els.root.value);
-    const list = chords.map(c=> `<span class="chip"><strong style="margin-right:6px">${c.roman}</strong>${c.name}</span>`).join('');
-    els.overview.innerHTML = state.showList ? list : `<span class="muted">（已隱藏）</span>`;
-  }
+  function renderChoices(chords) {
+    el.grid.innerHTML = '';
+    let indices = [0,1,2,3,4,5,6];
+    if(state.mode === 'degreeToChord') {
+      indices.sort(() => Math.random() - 0.5);
+    }
 
-  function setResult(ok, message){
-    els.result.hidden = false;
-    els.rDot.className = 'dot ' + (ok?'ok':'bad');
-    els.rText.textContent = message;
-    els.qbox.style.borderColor = ok ? 'rgba(46, 204, 113, .6)' : 'rgba(255,107,107,.7)';
-    setTimeout(()=>{ els.qbox.style.borderColor = 'var(--border)'; }, 300);
-  }
-
-  function clearResult(){
-    els.result.hidden = true;
-    els.rText.textContent = '';
-  }
-
-  // ✅ 訪問次數（呼叫你的 GAS API）
-  function loadVisits(){
-    const ns = 'enoooch0921.github.io';
-    const key = 'chord-degree-trainer';
-    const GAS_URL = 'https://script.google.com/macros/s/AKfycbz4cPmUtxPPw3fHK7TOJLqTfNJmlbNeCNzcSPLR_dgqIfIqdXeoOkCnOJFtFYhkua8/exec';
-
-    const upUrl  = `${GAS_URL}?ns=${encodeURIComponent(ns)}&key=${encodeURIComponent(key)}&op=up&amount=1`;
-    const getUrl = `${GAS_URL}?ns=${encodeURIComponent(ns)}&key=${encodeURIComponent(key)}&op=get`;
-
-    const fetchWithTimeout = (url, ms=5000)=>{
-      const ctrl = new AbortController(); const t=setTimeout(()=>ctrl.abort(),ms);
-      return fetch(url, { signal:ctrl.signal, cache:'no-store' }).finally(()=>clearTimeout(t));
-    };
-
-    (async ()=>{
-      try{
-        const r = await fetchWithTimeout(upUrl);
-        const j = await r.json();
-        if (j && j.ok && typeof j.value === 'number'){
-          document.getElementById('visitText').textContent = j.value.toLocaleString('zh-Hant');
-          return;
-        }
-        throw new Error('up failed');
-      }catch{
-        try{
-          const r = await fetchWithTimeout(getUrl);
-          const j = await r.json();
-          if (j && j.ok && typeof j.value === 'number'){
-            document.getElementById('visitText').textContent = (j.value+1).toLocaleString('zh-Hant');
-            return;
-          }
-          throw new Error('get failed');
-        }catch{
-          try{
-            const k='local_fallback_visit_count';
-            const v=Number(localStorage.getItem(k)||'0')+1;
-            localStorage.setItem(k,String(v));
-            document.getElementById('visitText').textContent = `${v.toLocaleString('zh-Hant')}（本機）`;
-          }catch{}
-        }
+    indices.forEach(idx => {
+      const item = chords[idx];
+      const btn = document.createElement('button');
+      btn.className = 'choice-btn';
+      btn.dataset.idx = idx; // 標記正確答案的索引
+      
+      if(state.mode === 'chordToDegree') {
+        // 級數不用轉符號
+        btn.innerHTML = `${item.roman}<span class="hint-sub">級數</span>`;
+      } else {
+        // 選項是和弦名，使用 formatNote
+        btn.innerHTML = `${formatNote(item.name)}<span class="hint-sub">和弦</span>`;
       }
-    })();
+      
+      btn.onclick = () => checkAnswer(idx, btn);
+      el.grid.appendChild(btn);
+    });
   }
 
-  // ---------- 計時控制 ----------
-  function stopTimer(){
-    const t = state.timer;
-    if (t.timeoutId){ clearTimeout(t.timeoutId); t.timeoutId=null; }
-    if (t.intervalId){ clearInterval(t.intervalId); t.intervalId=null; }
-    t.running = false;
-  }
-  function resetTimerUI(){
-    els.tbar.style.width = '0%';
-    els.tlabel.textContent = '剩餘：—';
-  }
-  function startTimer(){
-    const enabled = els.timedMode.checked;
-    if (!enabled){ stopTimer(); els.timerBox.hidden = true; els.pauseBtn.disabled = true; return; }
-    els.timerBox.hidden = false;
-    els.pauseBtn.disabled = false;
-
-    const t = state.timer;
-    const limitMs = Math.max(3, Math.min(60, Number(els.timeLimit.value)||5)) * 1000;
-
-    const startMs = performance.now();
-    const duration = (t.paused && t.remainingMs>0) ? t.remainingMs : limitMs;
-    t.paused = false;
-    t.remainingMs = duration;
-    t.endAt = startMs + duration;
-    t.running = true;
-
+  function checkAnswer(idx, btn) {
+    if(state.lock) return;
+    state.lock = true;
     stopTimer();
 
-    t.intervalId = setInterval(()=>{
-      const now = performance.now();
-      const left = Math.max(0, t.endAt - now);
-      t.remainingMs = left;
-      const pct = 100 * (left / duration);
-      els.tbar.style.width = `${pct}%`;
-      els.tlabel.textContent = `剩餘：${(left/1000).toFixed(1)}s`;
-    }, 100);
-
-    t.timeoutId = setTimeout(()=>{
-      if (state.lock) return;
-      const correctBtn = [...document.querySelectorAll('.choice')]
-        .find(b => Number(b.dataset.actual) === state.current?.answerIdx);
-      if (correctBtn) correctBtn.classList.add('correct');
-      state.bad += 1; state.streak = 0;
-      setResult(false, '逾時！這題算錯，繼續下一題。');
-      updateScoreboard();
-      lockChoices();
-      stopTimer();
-      setTimeout(nextQuestion, 600);
-    }, duration);
+    const isCorrect = idx === state.current.answerIdx;
+    
+    if(isCorrect) {
+      btn.classList.add('correct');
+      state.score.ok++;
+      state.score.streak++;
+      el.qSub.textContent = "Correct! 🎉";
+      setTimeout(nextQuestion, 800);
+    } else {
+      btn.classList.add('wrong');
+      state.score.bad++;
+      state.score.streak = 0;
+      
+      // Highlight correct one by index
+      const correctBtn = el.grid.querySelector(`button[data-idx="${state.current.answerIdx}"]`);
+      if(correctBtn) correctBtn.classList.add('correct');
+      
+      el.qSub.textContent = "Oops! 下一題...";
+      setTimeout(nextQuestion, 1500);
+    }
+    updateScore();
   }
 
-  function togglePause(){
-    const t = state.timer;
-    if (!els.timedMode.checked) return;
-    if (!t.running && !t.paused){
-      startTimer();
-      els.pauseBtn.textContent = '暫停';
-      return;
-    }
-    if (t.paused){
-      startTimer();
-      els.pauseBtn.textContent = '暫停';
-    }else{
-      t.paused = true;
-      stopTimer();
-      els.pauseBtn.textContent = '繼續';
-    }
+  function updateScore() {
+    el.scoreOk.textContent = state.score.ok;
+    el.scoreBad.textContent = state.score.bad;
+    el.streak.textContent = state.score.streak;
   }
 
-  // ---------- 出題 ----------
-  function updateShuffleLabel(){
-    if (els.mode()==='degreeToChord'){
-      els.shuffleText.textContent = '隨機排列選項（避免位置記憶）';
-    }else{
-      els.shuffleText.textContent = '隨機排列選項（此模式不打亂）';
-    }
+  // --- Timer ---
+  function startTimer() {
+    el.timerLine.style.transition = 'none';
+    el.timerLine.style.width = '100%';
+    
+    // Force reflow
+    void el.timerLine.offsetWidth;
+    
+    el.timerLine.style.transition = 'width 5s linear';
+    el.timerLine.style.width = '0%';
+    
+    state.timer = setTimeout(() => {
+      if(!state.lock) {
+        state.score.bad++;
+        state.score.streak = 0;
+        updateScore();
+        el.qSub.textContent = "時間到！";
+        state.lock = true;
+        // 逾時也顯示正確答案
+        const correctBtn = el.grid.querySelector(`button[data-idx="${state.current.answerIdx}"]`);
+        if(correctBtn) correctBtn.classList.add('correct');
+        setTimeout(nextQuestion, 1500);
+      }
+    }, 5000);
+  }
+  
+  function stopTimer() {
+    clearTimeout(state.timer);
+    el.timerLine.style.transition = 'none';
+    el.timerLine.style.width = '0%';
   }
 
-  function nextQuestion(){
-    state.lock = false;
-    clearResult();
-    els.choices.innerHTML = '';
-
-    // 根音：固定或隨機
-    let root = els.root.value;
-    if (els.keymode() === 'random'){
-      // ✅ 17 個主音（把等音當獨立選項）
-      const ROOTS = ['C','C#','Db','D','D#','Eb','E','F','F#','Gb','G','G#','Ab','A','A#','Bb','B'];
-      root = pick(ROOTS);
-    }
-
-    const { chords } = triadsMajor(root);
-    const mode = els.mode();
-    els.qKey.textContent = `調性：${root} 大調`;
-
-    const target = pick(chords);
-    state.current = { root, mode, answerIdx: target.degree, target };
-
-    // 只在「級數 ➜ 和弦」時可打亂
-    const shouldShuffle = (els.shuffle.checked && mode === 'degreeToChord');
-    const order = shouldShuffle ? shuffledIndices(7) : Array.from({length:7},(_,i)=>i);
-
-    if (mode === 'chordToDegree'){
-      els.qText.textContent = target.name;
-      order.forEach((k, visualIdx)=>{
-        const lab = ROMAN_MAJOR[k];
-        const btn = document.createElement('button');
-        btn.className = 'choice';
-        btn.dataset.actual = String(k);
-        btn.innerHTML = `<span class="idxHint">${visualIdx+1}</span><div style="font-weight:800">${lab}</div><div class="muted" style="font-size:12px">級數</div>`;
-        btn.addEventListener('click', ()=> onChoose(k, btn));
-        els.choices.appendChild(btn);
-      });
-    }else{
-      els.qText.textContent = target.roman;
-      order.forEach((k, visualIdx)=>{
-        const c = chords[k];
-        const btn = document.createElement('button');
-        btn.className = 'choice';
-        btn.dataset.actual = String(k);
-        btn.innerHTML = `<span class="idxHint">${visualIdx+1}</span><div style="font-weight:800">${c.name}</div><div class="muted" style="font-size:12px">和弦</div>`;
-        btn.addEventListener('click', ()=> onChoose(k, btn));
-        els.choices.appendChild(btn);
-      });
-    }
-
-    renderOverview();
-
-    resetTimerUI();
-    state.timer.paused = false;
-    state.timer.remainingMs = 0;
-    if (els.timedMode.checked){
-      startTimer();
-      els.pauseBtn.textContent = '暫停';
-    }else{
-      stopTimer();
-      els.pauseBtn.disabled = true;
-    }
-
-    els.nextBtn.textContent = '開始';
-    els.nextBtn2.textContent = '下一題';
-    updateShuffleLabel();
-  }
-
-  function lockChoices(){
-    state.lock = true;
-    document.querySelectorAll('.choice').forEach(b=> b.disabled = true);
-  }
-
-  function onChoose(idx, btnEl){
-    if (state.lock || !state.current) return;
-    const correct = idx === state.current.answerIdx;
-    const all = Array.from(document.querySelectorAll('.choice'));
-    const correctBtn = all.find(b => Number(b.dataset.actual) === state.current.answerIdx);
-
-    if (correct){
-      btnEl.classList.add('correct');
-      state.ok += 1; state.streak += 1;
-      setResult(true, '答對了！');
-      updateScoreboard();
-      lockChoices();
-      stopTimer();
-      setTimeout(nextQuestion, 600);
-    }else{
-      btnEl.classList.add('wrong');
-      if (correctBtn) correctBtn.classList.add('correct');
-      state.bad += 1; state.streak = 0;
-      const tip = (state.current.mode==='chordToDegree')
-        ? `正確級數：${ROMAN_MAJOR[state.current.answerIdx]}`
-        : `正確和弦：${triadsMajor(els.root.value).chords[state.current.answerIdx].name}`;
-      setResult(false, `再試試～ ${tip}`);
-      updateScoreboard();
-      lockChoices();
-      stopTimer();
-      setTimeout(nextQuestion, 600);
-    }
-  }
-
-  // ---------- 事件 ----------
-  els.nextBtn.addEventListener('click', nextQuestion);
-  els.nextBtn2.addEventListener('click', nextQuestion);
-
-  document.getElementById('toggleList').addEventListener('click', ()=>{ state.showList = !state.showList; renderOverview(); });
-  els.resetScore.addEventListener('click', ()=>{
-    state.ok = state.bad = state.streak = 0; updateScoreboard(); clearResult();
-    document.querySelectorAll('.choice').forEach(b=>{ b.classList.remove('correct','wrong'); b.disabled=false; });
-    stopTimer(); resetTimerUI();
+  // --- UI Interactivity ---
+  
+  // Settings Logic
+  const toggleOpts = document.querySelectorAll('.toggle-opt');
+  toggleOpts.forEach(opt => {
+    opt.addEventListener('click', () => {
+      const grp = opt.dataset.grp;
+      document.querySelectorAll(`.toggle-opt[data-grp="${grp}"]`).forEach(o => o.classList.remove('active'));
+      opt.classList.add('active');
+      state[grp] = opt.dataset.val;
+      if(state.started) nextQuestion(); // Immediate apply
+    });
   });
 
-  els.timedMode.addEventListener('change', ()=>{
-    if (els.timedMode.checked){
-      els.pauseBtn.disabled = false;
-      if (state.current && !state.lock){ startTimer(); els.pauseBtn.textContent='暫停'; }
-      els.timerBox.hidden = false;
-    }else{
-      stopTimer(); resetTimerUI(); els.timerBox.hidden = true; els.pauseBtn.disabled = true; els.pauseBtn.textContent='暫停';
-    }
-  });
-  els.timeLimit.addEventListener('change', ()=>{
-    if (els.timedMode.checked && state.current && !state.lock){
-      startTimer();
-    }
-  });
-  els.pauseBtn.addEventListener('click', togglePause);
-
-  els.root.addEventListener('change', renderOverview);
-  els.m1.addEventListener('change', updateShuffleLabel);
-  els.m2.addEventListener('change', updateShuffleLabel);
-
-  window.addEventListener('keydown', (e)=>{
-    const key = e.key.toLowerCase();
-    if (key>='1' && key<='7'){
-      const vi = parseInt(key,10)-1;
-      const btns = document.querySelectorAll('.choice');
-      if (btns[vi]) btns[vi].click();
-    }else if (key==='n'){
-      nextQuestion();
-    }else if (key==='p'){
-      if (!els.pauseBtn.disabled) togglePause();
-    }else if (key==='l'){
-      document.getElementById('toggleList').click();
-    }
+  document.getElementById('rootSelect').addEventListener('change', (e) => {
+    state.root = e.target.value;
+    if(state.started && state.keymode === 'fixed') nextQuestion();
   });
 
-  // 初始
-  renderOverview(); updateScoreboard(); resetTimerUI(); els.timerBox.hidden = true; els.pauseBtn.disabled = true;
-  updateShuffleLabel();
+  document.getElementById('timerCheck').addEventListener('change', (e) => {
+    state.timerEnabled = e.target.checked;
+    if(state.started) nextQuestion();
+  });
+
+  document.getElementById('startBtn').addEventListener('click', () => {
+    state.started = true;
+    nextQuestion();
+  });
+
+  document.getElementById('resetBtn').addEventListener('click', () => {
+    state.score = { ok:0, bad:0, streak:0 };
+    updateScore();
+  });
+
+  // Modal Controls
+  const modal = document.getElementById('settingsModal');
+  document.getElementById('btnSettings').onclick = () => modal.classList.add('open');
+  document.getElementById('closeSettings').onclick = () => modal.classList.remove('open');
+  modal.addEventListener('click', (e) => {
+    if(e.target === modal) modal.classList.remove('open');
+  });
+
+  // Init
   loadVisits();
+  
+  function loadVisits(){
+    // 模擬讀取
+    const count = localStorage.getItem('chord_visits') || 0;
+    const newCount = Number(count) + 1;
+    localStorage.setItem('chord_visits', newCount);
+    document.getElementById('visitCount').textContent = newCount;
+  }
+
 })();
 </script>
 </body>
