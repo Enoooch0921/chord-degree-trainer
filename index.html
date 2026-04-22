@@ -188,8 +188,15 @@
           <input type="checkbox" id="audioCheck" checked style="transform:scale(1.5)">
         </div>
         <div style="display:flex; justify-content:space-between; align-items:center">
-          <label class="form-label" style="margin:0">計時挑戰 (5秒)</label>
+          <label class="form-label" style="margin:0">計時挑戰</label>
           <input type="checkbox" id="timerCheck" style="transform:scale(1.5)">
+        </div>
+        <div id="timerDurationRow" style="display:none; justify-content:space-between; align-items:center; margin-top:10px">
+          <label class="form-label" style="margin:0; color:var(--text-muted); font-size:13px">限時秒數</label>
+          <div style="display:flex; align-items:center; gap:6px">
+            <input type="number" id="timerSeconds" min="1" max="60" value="5" style="width:60px; padding:4px 8px; border-radius:8px; border:1px solid var(--border); background:var(--surface); color:var(--text); font-size:14px; text-align:center">
+            <span style="color:var(--text-muted); font-size:13px">秒</span>
+          </div>
         </div>
       </div>
       <button class="btn-primary" id="resetBtn" style="background: #ef4444; margin-top:20px">重置分數</button>
@@ -311,6 +318,7 @@
     keymode: 'fixed',
     root: 'C',
     timerEnabled: false,
+    timerDuration: 5,
     audioEnabled: true,
     score: { ok:0, bad:0, streak:0 },
     current: null,
@@ -439,10 +447,11 @@
 
   // --- TIMER ---
   function startTimer() {
+    const ms = state.timerDuration * 1000;
     el.timerLine.style.transition = 'none'; el.timerLine.style.width = '100%';
     void el.timerLine.offsetWidth;
-    el.timerLine.style.transition = 'width 5s linear'; el.timerLine.style.width = '0%';
-    
+    el.timerLine.style.transition = `width ${state.timerDuration}s linear`; el.timerLine.style.width = '0%';
+
     state.timer = setTimeout(() => {
       if(!state.lock) {
         state.score.bad++; state.score.streak = 0; updateScore();
@@ -451,7 +460,7 @@
         if(correctBtn) correctBtn.classList.add('correct');
         setTimeout(nextQuestion, 1500);
       }
-    }, 5000);
+    }, ms);
   }
   function stopTimer() {
     clearTimeout(state.timer);
@@ -476,7 +485,14 @@
   });
   document.getElementById('timerCheck').addEventListener('change', (e) => {
     state.timerEnabled = e.target.checked;
+    document.getElementById('timerDurationRow').style.display = e.target.checked ? 'flex' : 'none';
     if(state.started) nextQuestion();
+  });
+  document.getElementById('timerSeconds').addEventListener('change', (e) => {
+    const v = parseInt(e.target.value, 10);
+    if(v >= 1 && v <= 60) state.timerDuration = v;
+    else e.target.value = state.timerDuration;
+    if(state.started && state.timerEnabled) nextQuestion();
   });
   document.getElementById('audioCheck').addEventListener('change', (e) => {
     state.audioEnabled = e.target.checked;
