@@ -403,6 +403,7 @@
     started: false,
     chordSet: 'diatonic',
     degreeFilter: [0,1,2,3,4,5,6],
+    chromaFilter: ['II','III','iv','v','VI','♯IV°','♭VI','♭VII'],
     questionCount: 0,
     roundSize: 10,
     roundBestStreak: 0,
@@ -441,9 +442,13 @@
     const chromatic = state.chordSet === 'advanced' ? getChromaticChords(currentKey) : [];
     const allChords = [...diatonic, ...chromatic];
 
-    // Build target pool: filtered diatonic + all chromatic
+    // Build target pool (apply filters)
     const filtDiatonic = diatonic.filter((_, i) => state.degreeFilter.includes(i));
-    const targetPool = [...filtDiatonic, ...chromatic];
+    const filtChromatic = chromatic.filter(c => state.chromaFilter.includes(c.roman));
+    const targetPool = state.chordSet === 'advanced'
+      ? [...filtDiatonic, ...filtChromatic]
+      : filtDiatonic;
+    if(targetPool.length === 0) targetPool.push(...diatonic);
 
     const target = targetPool[rand(targetPool.length)];
 
@@ -597,6 +602,7 @@
       opt.classList.add('active');
       state[grp] = opt.dataset.val;
       saveSettings();
+      if(grp === 'chordSet') renderDegreeFilter();
       if(state.started) nextQuestion();
     });
   });
@@ -672,7 +678,8 @@
       scaleType: state.scaleType, chordSet: state.chordSet,
       timerEnabled: state.timerEnabled, timerDuration: state.timerDuration,
       audioEnabled: state.audioEnabled,
-      degreeFilter: state.degreeFilter
+      degreeFilter: state.degreeFilter,
+      chromaFilter: state.chromaFilter
     }));
   }
 
@@ -688,6 +695,7 @@
       if(s.timerDuration) state.timerDuration = s.timerDuration;
       if(s.audioEnabled != null) state.audioEnabled = s.audioEnabled;
       if(Array.isArray(s.degreeFilter) && s.degreeFilter.length) state.degreeFilter = s.degreeFilter;
+      if(Array.isArray(s.chromaFilter)) state.chromaFilter = s.chromaFilter;
     } catch(e) {}
     syncSettingsUI();
   }
@@ -703,34 +711,56 @@
     if(state.timerEnabled) document.getElementById('timerDurationRow').style.display = 'flex';
   }
 
-  // --- DEGREE FILTER INIT ---
-  function initDegreeFilter() {
+  // --- DEGREE FILTER ---
+  function renderDegreeFilter() {
     const row = document.getElementById('degreeFilterRow');
-    ROMAN.forEach((r, i) => {
+    row.innerHTML = '';
+    const isAdv = state.chordSet === 'advanced';
+
+    const mkBtn = (label, isActive, onToggle) => {
       const btn = document.createElement('button');
-      btn.textContent = r;
-      btn.dataset.deg = i;
-      const active = state.degreeFilter.includes(i);
-      btn.style.cssText = `padding:6px 10px;border-radius:8px;font-size:13px;cursor:pointer;border:1px solid var(--card-border);font-weight:600;transition:0.2s;background:${active ? 'var(--primary)' : 'rgba(255,255,255,0.05)'};color:white;`;
+      btn.textContent = label;
+      btn.style.cssText = `padding:6px 10px;border-radius:8px;font-size:13px;cursor:pointer;border:1px solid var(--card-border);font-weight:600;transition:0.2s;background:${isActive ? 'var(--primary)' : 'rgba(255,255,255,0.05)'};color:white;`;
       btn.addEventListener('click', () => {
-        const idx = state.degreeFilter.indexOf(i);
-        if(idx > -1 && state.degreeFilter.length > 1) {
-          state.degreeFilter.splice(idx, 1);
-          btn.style.background = 'rgba(255,255,255,0.05)';
-        } else if(idx === -1) {
-          state.degreeFilter.push(i);
-          btn.style.background = 'var(--primary)';
-        }
+        const nowActive = onToggle(btn);
+        btn.style.background = nowActive ? 'var(--primary)' : 'rgba(255,255,255,0.05)';
         saveSettings();
       });
-      row.appendChild(btn);
+      return btn;
+    };
+
+    const totalSelected = () => state.degreeFilter.length + (isAdv ? state.chromaFilter.length : 0);
+
+    // 順階 buttons (always shown)
+    ROMAN.forEach((r, i) => {
+      row.appendChild(mkBtn(r, state.degreeFilter.includes(i), (btn) => {
+        const idx = state.degreeFilter.indexOf(i);
+        if(idx > -1 && totalSelected() > 1) { state.degreeFilter.splice(idx, 1); return false; }
+        else if(idx === -1) { state.degreeFilter.push(i); return true; }
+        return idx === -1;
+      }));
     });
+
+    // 非順階 buttons (only in advanced mode)
+    if(isAdv) {
+      const sep = document.createElement('div');
+      sep.style.cssText = 'width:100%;height:1px;background:var(--card-border);margin:6px 0;';
+      row.appendChild(sep);
+      ['II','III','iv','v','VI','♯IV°','♭VI','♭VII'].forEach(r => {
+        row.appendChild(mkBtn(r, state.chromaFilter.includes(r), (btn) => {
+          const idx = state.chromaFilter.indexOf(r);
+          if(idx > -1 && totalSelected() > 1) { state.chromaFilter.splice(idx, 1); return false; }
+          else if(idx === -1) { state.chromaFilter.push(r); return true; }
+          return idx === -1;
+        }));
+      });
+    }
   }
 
   // Init
   loadVisits();
   loadSettings();
-  initDegreeFilter();
+  renderDegreeFilter();
   function loadVisits(){
     const count = localStorage.getItem('chord_visits') || 0;
     const newCount = Number(count) + 1;
