@@ -157,6 +157,7 @@
       <div class="stat-pill" style="color:var(--correct)"><span>✓</span> <span id="scoreOk">0</span></div>
       <div class="stat-pill" style="color:var(--wrong)"><span>✕</span> <span id="scoreBad">0</span></div>
       <div class="stat-pill" style="color:#fbbf24"><span>★</span> <span id="streak">0</span></div>
+      <div class="stat-pill" style="color:#38bdf8"><span>%</span> <span id="scoreAcc">–</span></div>
     </div>
 
     <div class="stage">
@@ -182,6 +183,11 @@
       <div class="form-group"><label class="form-label">練習模式</label><div class="toggle-row"><div class="toggle-opt active" data-grp="mode" data-val="chordToDegree">和弦 ➜ 級數</div><div class="toggle-opt" data-grp="mode" data-val="degreeToChord">級數 ➜ 和弦</div></div></div>
       <div class="form-group"><label class="form-label">主音設定 (Key)</label><select id="rootSelect"><option value="C">C Major</option><option value="G">G Major (1#)</option><option value="D">D Major (2#)</option><option value="A">A Major (3#)</option><option value="E">E Major (4#)</option><option value="B">B Major (5#)</option><option value="F#">F# Major (6#)</option><option value="C#">C# Major (7#)</option><option disabled>──────────</option><option value="F">F Major (1b)</option><option value="Bb">Bb Major (2b)</option><option value="Eb">Eb Major (3b)</option><option value="Ab">Ab Major (4b)</option><option value="Db">Db Major (5b)</option><option value="Gb">Gb Major (6b)</option><option value="Cb">Cb Major (7b)</option></select></div>
       <div class="form-group"><label class="form-label">出題範圍</label><div class="toggle-row"><div class="toggle-opt active" data-grp="keymode" data-val="fixed">固定調性</div><div class="toggle-opt" data-grp="keymode" data-val="random">隨機切換</div></div></div>
+      <div class="form-group"><label class="form-label">調式 (Scale Type)</label><div class="toggle-row"><div class="toggle-opt active" data-grp="scaleType" data-val="major">大調 Major</div><div class="toggle-opt" data-grp="scaleType" data-val="minor">小調 Minor</div></div></div>
+      <div class="form-group">
+        <label class="form-label">出題級數篩選</label>
+        <div id="degreeFilterRow" style="display:flex; flex-wrap:wrap; gap:8px; margin-top:4px"></div>
+      </div>
       <div class="form-group">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px">
           <label class="form-label" style="margin:0">聲音回饋 (Audio)</label>
@@ -194,13 +200,32 @@
         <div id="timerDurationRow" style="display:none; justify-content:space-between; align-items:center; margin-top:10px">
           <label class="form-label" style="margin:0; color:var(--text-muted); font-size:13px">限時秒數</label>
           <div style="display:flex; align-items:center; gap:6px">
-            <input type="number" id="timerSeconds" min="1" max="60" value="5" style="width:60px; padding:4px 8px; border-radius:8px; border:1px solid var(--border); background:var(--surface); color:var(--text); font-size:14px; text-align:center">
+            <input type="number" id="timerSeconds" min="1" max="60" value="5" style="width:60px; padding:4px 8px; border-radius:8px; border:1px solid var(--card-border); background:#2a273f; color:var(--text-main); font-size:14px; text-align:center">
             <span style="color:var(--text-muted); font-size:13px">秒</span>
           </div>
         </div>
       </div>
       <button class="btn-primary" id="resetBtn" style="background: #ef4444; margin-top:20px">重置分數</button>
       <div style="text-align:center; margin-top:20px; font-size:12px; color:var(--text-muted)">訪問次數：<span id="visitCount">...</span></div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="summaryModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title">第 <span id="summaryRound">1</span> 回合結果</div>
+      </div>
+      <div style="text-align:center; padding:10px 0 20px">
+        <div style="font-size:48px; font-weight:800; color:var(--primary)" id="summaryAcc">–%</div>
+        <div style="color:var(--text-muted); margin-top:4px">答題正確率</div>
+      </div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:20px">
+        <div class="stat-pill" style="color:var(--correct); justify-content:center">✓ <span id="summaryOk">0</span></div>
+        <div class="stat-pill" style="color:var(--wrong); justify-content:center">✕ <span id="summaryBad">0</span></div>
+        <div class="stat-pill" style="color:#fbbf24; justify-content:center; grid-column:1/-1">最高連答 ★ <span id="summaryStreak">0</span></div>
+      </div>
+      <div id="summaryWeak" style="font-size:13px; color:var(--text-muted); text-align:center; margin-bottom:16px"></div>
+      <button class="btn-primary" id="summaryNextBtn">繼續練習</button>
     </div>
   </div>
 
@@ -299,16 +324,38 @@
   };
   const ROMAN = ["I","ii","iii","IV","V","vi","vii°"];
   const QUAL = ['maj','min','min','maj','maj','min','dim'];
+  const ROMAN_MINOR = ["i","ii°","♭III","iv","v","♭VI","♭VII"];
+  const QUAL_MINOR  = ['min','dim','maj','min','min','maj','maj'];
+  const SCALE_DATA_MINOR = {
+    'A': ['A','B','C','D','E','F','G'],
+    'E': ['E','F#','G','A','B','C','D'],
+    'B': ['B','C#','D','E','F#','G','A'],
+    'F#':['F#','G#','A','B','C#','D','E'],
+    'C#':['C#','D#','E','F#','G#','A','B'],
+    'G#':['G#','A#','B','C#','D#','E','F#'],
+    'D#':['D#','E#','F#','G#','A#','B','C#'],
+    'D': ['D','E','F','G','A','Bb','C'],
+    'G': ['G','A','Bb','C','D','Eb','F'],
+    'C': ['C','D','Eb','F','G','Ab','Bb'],
+    'F': ['F','G','Ab','Bb','C','Db','Eb'],
+    'Bb':['Bb','C','Db','Eb','F','Gb','Ab'],
+    'Eb':['Eb','F','Gb','Ab','Bb','Cb','Db'],
+    'Ab':['Ab','Bb','Cb','Db','Eb','Fb','Gb'],
+  };
 
   // --- Helpers ---
   const formatNote = (str) => { if(!str) return ""; return str.replace(/b/g, '♭').replace(/#/g, '♯'); };
   const rand = n => Math.floor(Math.random()*n);
   const getTriads = (key) => {
-    let notes = SCALE_DATA[key] || SCALE_DATA['C'];
+    const isMinor = state.scaleType === 'minor';
+    const data  = isMinor ? SCALE_DATA_MINOR : SCALE_DATA;
+    const roman = isMinor ? ROMAN_MINOR : ROMAN;
+    const qual  = isMinor ? QUAL_MINOR  : QUAL;
+    let notes = data[key] || data['C'];
     return notes.map((n, i) => {
-      const q = QUAL[i];
+      const q = qual[i];
       let suffix = q === 'min' ? 'm' : (q === 'dim' ? '°' : '');
-      return { degree: i, roman: ROMAN[i], name: n + suffix, plainName: n + suffix };
+      return { degree: i, roman: roman[i], name: n + suffix, plainName: n + suffix };
     });
   };
 
@@ -317,6 +364,7 @@
     mode: 'chordToDegree',
     keymode: 'fixed',
     root: 'C',
+    scaleType: 'major',
     timerEnabled: false,
     timerDuration: 5,
     audioEnabled: true,
@@ -324,7 +372,12 @@
     current: null,
     lock: false,
     timer: null,
-    started: false
+    started: false,
+    degreeFilter: [0,1,2,3,4,5,6],
+    questionCount: 0,
+    roundSize: 10,
+    roundBestStreak: 0,
+    wrongByDegree: [0,0,0,0,0,0,0]
   };
 
   // --- DOM ---
@@ -336,6 +389,7 @@
     scoreOk: document.getElementById('scoreOk'),
     scoreBad: document.getElementById('scoreBad'),
     streak: document.getElementById('streak'),
+    scoreAcc: document.getElementById('scoreAcc'),
     modal: document.getElementById('settingsModal'),
     timerLine: document.getElementById('timerLine'),
     replayBtn: document.getElementById('replayBtn')
@@ -355,13 +409,14 @@
     }
     
     const chords = getTriads(currentKey);
-    const targetIdx = rand(7);
+    const pool = state.degreeFilter.length ? state.degreeFilter : [0,1,2,3,4,5,6];
+    const targetIdx = pool[rand(pool.length)];
     const target = chords[targetIdx];
-    
+
     state.current = { key: currentKey, answerIdx: targetIdx, list: chords, target: target };
-    
+
     // UI Update
-    el.keyLabel.textContent = formatNote(currentKey) + " MAJOR";
+    el.keyLabel.textContent = formatNote(currentKey) + (state.scaleType === 'minor' ? ' MINOR' : ' MAJOR');
     
     // Animation reset
     el.qText.style.transform = "scale(0.8)"; el.qText.style.opacity = "0";
@@ -411,30 +466,33 @@
     // 答題後顯示播放按鈕
     el.replayBtn.classList.remove('hidden');
 
+    state.questionCount++;
+    const isSummaryTime = state.questionCount % state.roundSize === 0;
+
     if(isCorrect) {
       btn.classList.add('correct');
       state.score.ok++;
       state.score.streak++;
       el.qSub.textContent = "Correct! 🎉";
-      
-      // 🎵 Play Sound if Correct
+
       if(state.audioEnabled) {
         AudioEngine.playChord(state.current.target.plainName);
         el.replayBtn.classList.add('playing');
         setTimeout(()=>el.replayBtn.classList.remove('playing'), 800);
       }
 
-      setTimeout(nextQuestion, 1200);
+      setTimeout(isSummaryTime ? showSummary : nextQuestion, 1200);
     } else {
       btn.classList.add('wrong');
       state.score.bad++;
       state.score.streak = 0;
-      
+      state.wrongByDegree[state.current.answerIdx]++;
+
       const correctBtn = el.grid.querySelector(`button[data-idx="${state.current.answerIdx}"]`);
       if(correctBtn) correctBtn.classList.add('correct');
-      
+
       el.qSub.textContent = "Oops! 下一題...";
-      setTimeout(nextQuestion, 1500);
+      setTimeout(isSummaryTime ? showSummary : nextQuestion, 1500);
     }
     updateScore();
   }
@@ -443,6 +501,8 @@
     el.scoreOk.textContent = state.score.ok;
     el.scoreBad.textContent = state.score.bad;
     el.streak.textContent = state.score.streak;
+    const total = state.score.ok + state.score.bad;
+    el.scoreAcc.textContent = total ? Math.round(state.score.ok / total * 100) + '%' : '–';
   }
 
   // --- TIMER ---
@@ -467,6 +527,27 @@
     el.timerLine.style.transition = 'none'; el.timerLine.style.width = '0%';
   }
 
+  // --- ROUND SUMMARY ---
+  function showSummary() {
+    stopTimer();
+    state.roundBestStreak = Math.max(state.roundBestStreak, state.score.streak);
+    const roman = state.scaleType === 'minor' ? ROMAN_MINOR : ROMAN;
+    const maxWrong = Math.max(...state.wrongByDegree);
+    const weakIdx = maxWrong > 0 ? state.wrongByDegree.indexOf(maxWrong) : -1;
+    const ok = state.score.ok, bad = state.score.bad;
+    const acc = (ok + bad) ? Math.round(ok / (ok + bad) * 100) : 0;
+
+    document.getElementById('summaryRound').textContent = Math.floor(state.questionCount / state.roundSize);
+    document.getElementById('summaryAcc').textContent = acc + '%';
+    document.getElementById('summaryOk').textContent = ok;
+    document.getElementById('summaryBad').textContent = bad;
+    document.getElementById('summaryStreak').textContent = state.roundBestStreak;
+    document.getElementById('summaryWeak').textContent = weakIdx >= 0
+      ? `最需加強：${roman[weakIdx]}（錯 ${maxWrong} 次）` : '全部答對！🎉';
+
+    document.getElementById('summaryModal').classList.add('open');
+  }
+
   // --- EVENTS ---
   const toggleOpts = document.querySelectorAll('.toggle-opt');
   toggleOpts.forEach(opt => {
@@ -475,27 +556,50 @@
       document.querySelectorAll(`.toggle-opt[data-grp="${grp}"]`).forEach(o => o.classList.remove('active'));
       opt.classList.add('active');
       state[grp] = opt.dataset.val;
+      saveSettings();
       if(state.started) nextQuestion();
     });
   });
 
   document.getElementById('rootSelect').addEventListener('change', (e) => {
     state.root = e.target.value;
+    saveSettings();
     if(state.started && state.keymode === 'fixed') nextQuestion();
   });
   document.getElementById('timerCheck').addEventListener('change', (e) => {
     state.timerEnabled = e.target.checked;
     document.getElementById('timerDurationRow').style.display = e.target.checked ? 'flex' : 'none';
+    saveSettings();
     if(state.started) nextQuestion();
   });
   document.getElementById('timerSeconds').addEventListener('change', (e) => {
     const v = parseInt(e.target.value, 10);
     if(v >= 1 && v <= 60) state.timerDuration = v;
     else e.target.value = state.timerDuration;
+    saveSettings();
     if(state.started && state.timerEnabled) nextQuestion();
   });
   document.getElementById('audioCheck').addEventListener('change', (e) => {
     state.audioEnabled = e.target.checked;
+    saveSettings();
+  });
+
+  // F4: 鍵盤快捷鍵
+  document.addEventListener('keydown', (e) => {
+    if(!state.started || state.lock) return;
+    const n = parseInt(e.key, 10);
+    if(n >= 1 && n <= 7) {
+      const btns = el.grid.querySelectorAll('.choice-btn');
+      if(btns[n - 1]) btns[n - 1].click();
+    }
+  });
+
+  // F7: 回合摘要繼續按鈕
+  document.getElementById('summaryNextBtn').addEventListener('click', () => {
+    document.getElementById('summaryModal').classList.remove('open');
+    state.wrongByDegree = [0,0,0,0,0,0,0];
+    state.roundBestStreak = 0;
+    nextQuestion();
   });
 
   document.getElementById('startBtn').addEventListener('click', () => {
@@ -521,8 +625,71 @@
   document.getElementById('closeSettings').onclick = () => modal.classList.remove('open');
   modal.addEventListener('click', (e) => { if(e.target === modal) modal.classList.remove('open'); });
 
+  // --- SETTINGS PERSISTENCE ---
+  function saveSettings() {
+    localStorage.setItem('chord_settings', JSON.stringify({
+      mode: state.mode, keymode: state.keymode, root: state.root,
+      scaleType: state.scaleType,
+      timerEnabled: state.timerEnabled, timerDuration: state.timerDuration,
+      audioEnabled: state.audioEnabled,
+      degreeFilter: state.degreeFilter
+    }));
+  }
+
+  function loadSettings() {
+    try {
+      const s = JSON.parse(localStorage.getItem('chord_settings') || '{}');
+      if(s.mode) state.mode = s.mode;
+      if(s.keymode) state.keymode = s.keymode;
+      if(s.root) state.root = s.root;
+      if(s.scaleType) state.scaleType = s.scaleType;
+      if(s.timerEnabled != null) state.timerEnabled = s.timerEnabled;
+      if(s.timerDuration) state.timerDuration = s.timerDuration;
+      if(s.audioEnabled != null) state.audioEnabled = s.audioEnabled;
+      if(Array.isArray(s.degreeFilter) && s.degreeFilter.length) state.degreeFilter = s.degreeFilter;
+    } catch(e) {}
+    syncSettingsUI();
+  }
+
+  function syncSettingsUI() {
+    document.querySelectorAll('.toggle-opt').forEach(opt => {
+      opt.classList.toggle('active', state[opt.dataset.grp] === opt.dataset.val);
+    });
+    document.getElementById('rootSelect').value = state.root;
+    document.getElementById('audioCheck').checked = state.audioEnabled;
+    document.getElementById('timerCheck').checked = state.timerEnabled;
+    document.getElementById('timerSeconds').value = state.timerDuration;
+    if(state.timerEnabled) document.getElementById('timerDurationRow').style.display = 'flex';
+  }
+
+  // --- DEGREE FILTER INIT ---
+  function initDegreeFilter() {
+    const row = document.getElementById('degreeFilterRow');
+    ROMAN.forEach((r, i) => {
+      const btn = document.createElement('button');
+      btn.textContent = r;
+      btn.dataset.deg = i;
+      const active = state.degreeFilter.includes(i);
+      btn.style.cssText = `padding:6px 10px;border-radius:8px;font-size:13px;cursor:pointer;border:1px solid var(--card-border);font-weight:600;transition:0.2s;background:${active ? 'var(--primary)' : 'rgba(255,255,255,0.05)'};color:white;`;
+      btn.addEventListener('click', () => {
+        const idx = state.degreeFilter.indexOf(i);
+        if(idx > -1 && state.degreeFilter.length > 1) {
+          state.degreeFilter.splice(idx, 1);
+          btn.style.background = 'rgba(255,255,255,0.05)';
+        } else if(idx === -1) {
+          state.degreeFilter.push(i);
+          btn.style.background = 'var(--primary)';
+        }
+        saveSettings();
+      });
+      row.appendChild(btn);
+    });
+  }
+
   // Init
   loadVisits();
+  loadSettings();
+  initDegreeFilter();
   function loadVisits(){
     const count = localStorage.getItem('chord_visits') || 0;
     const newCount = Number(count) + 1;
