@@ -184,6 +184,7 @@
       <div class="form-group"><label class="form-label">主音設定 (Key)</label><select id="rootSelect"><option value="C">C Major</option><option value="G">G Major (1#)</option><option value="D">D Major (2#)</option><option value="A">A Major (3#)</option><option value="E">E Major (4#)</option><option value="B">B Major (5#)</option><option value="F#">F# Major (6#)</option><option value="C#">C# Major (7#)</option><option disabled>──────────</option><option value="F">F Major (1b)</option><option value="Bb">Bb Major (2b)</option><option value="Eb">Eb Major (3b)</option><option value="Ab">Ab Major (4b)</option><option value="Db">Db Major (5b)</option><option value="Gb">Gb Major (6b)</option><option value="Cb">Cb Major (7b)</option></select></div>
       <div class="form-group"><label class="form-label">出題範圍</label><div class="toggle-row"><div class="toggle-opt active" data-grp="keymode" data-val="fixed">固定調性</div><div class="toggle-opt" data-grp="keymode" data-val="random">隨機切換</div></div></div>
       <div class="form-group"><label class="form-label">調式 (Scale Type)</label><div class="toggle-row"><div class="toggle-opt active" data-grp="scaleType" data-val="major">大調 Major</div><div class="toggle-opt" data-grp="scaleType" data-val="minor">小調 Minor</div></div></div>
+      <div class="form-group"><label class="form-label">和弦集</label><div class="toggle-row"><div class="toggle-opt active" data-grp="chordSet" data-val="diatonic">順階</div><div class="toggle-opt" data-grp="chordSet" data-val="advanced">進階（借用/副屬）</div></div></div>
       <div class="form-group">
         <label class="form-label">出題級數篩選</label>
         <div id="degreeFilterRow" style="display:flex; flex-wrap:wrap; gap:8px; margin-top:4px"></div>
@@ -343,6 +344,31 @@
     'Ab':['Ab','Bb','Cb','Db','Eb','Fb','Gb'],
   };
 
+  // --- Chromatic chord helpers ---
+  const NOTE_TO_SEMI = {
+    'C':0,'C#':1,'Db':1,'D':2,'D#':3,'Eb':3,'E':4,'F':5,'F#':6,
+    'Gb':6,'G':7,'G#':8,'Ab':8,'A':9,'A#':10,'Bb':10,'B':11,'Cb':11
+  };
+  const CHROMATIC_SHARP = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+  const CHROMATIC_FLAT  = ['C','Db','D','Eb','E','F','Gb','G','Ab','A','Bb','B'];
+  const FLAT_KEYS = ['F','Bb','Eb','Ab','Db','Gb','Cb'];
+
+  function getChromaticChords(key) {
+    const semi = NOTE_TO_SEMI[key] ?? 0;
+    const tbl = FLAT_KEYS.includes(key) ? CHROMATIC_FLAT : CHROMATIC_SHARP;
+    const n = (s) => tbl[(semi + s) % 12];
+    return [
+      { roman:'II',    name:n(2),       plainName:n(2) },
+      { roman:'III',   name:n(4),       plainName:n(4) },
+      { roman:'iv',    name:n(5)+'m',   plainName:n(5)+'m' },
+      { roman:'v',     name:n(7)+'m',   plainName:n(7)+'m' },
+      { roman:'VI',    name:n(9),       plainName:n(9) },
+      { roman:'♯IV°',  name:n(6)+'°',  plainName:n(6)+'°' },
+      { roman:'♭VI',   name:n(8),       plainName:n(8) },
+      { roman:'♭VII',  name:n(10),      plainName:n(10) },
+    ];
+  }
+
   // --- Helpers ---
   const formatNote = (str) => { if(!str) return ""; return str.replace(/b/g, '♭').replace(/#/g, '♯'); };
   const rand = n => Math.floor(Math.random()*n);
@@ -373,11 +399,12 @@
     lock: false,
     timer: null,
     started: false,
+    chordSet: 'diatonic',
     degreeFilter: [0,1,2,3,4,5,6],
     questionCount: 0,
     roundSize: 10,
     roundBestStreak: 0,
-    wrongByDegree: [0,0,0,0,0,0,0]
+    wrongByDegree: {}
   };
 
   // --- DOM ---
@@ -408,12 +435,28 @@
       currentKey = keys[rand(keys.length)];
     }
     
-    const chords = getTriads(currentKey);
-    const pool = state.degreeFilter.length ? state.degreeFilter : [0,1,2,3,4,5,6];
-    const targetIdx = pool[rand(pool.length)];
-    const target = chords[targetIdx];
+    const diatonic = getTriads(currentKey);
+    const chromatic = state.chordSet === 'advanced' ? getChromaticChords(currentKey) : [];
+    const allChords = [...diatonic, ...chromatic];
 
-    state.current = { key: currentKey, answerIdx: targetIdx, list: chords, target: target };
+    // Build target pool: filtered diatonic + all chromatic
+    const filtDiatonic = diatonic.filter((_, i) => state.degreeFilter.includes(i));
+    const targetPool = [...filtDiatonic, ...chromatic];
+
+    const target = targetPool[rand(targetPool.length)];
+
+    // Build displayed choices
+    let choices;
+    if (state.chordSet === 'advanced') {
+      const wrongs = allChords.filter(c => c.roman !== target.roman);
+      wrongs.sort(() => Math.random() - 0.5);
+      choices = [target, ...wrongs.slice(0, 7)].sort(() => Math.random() - 0.5);
+    } else {
+      choices = diatonic;
+    }
+
+    const answerIdx = choices.findIndex(c => c.roman === target.roman);
+    state.current = { key: currentKey, answerIdx, list: choices, target };
 
     // UI Update
     el.keyLabel.textContent = formatNote(currentKey) + (state.scaleType === 'minor' ? ' MINOR' : ' MAJOR');
@@ -436,21 +479,23 @@
 
   function renderChoices(chords) {
     el.grid.innerHTML = '';
-    let indices = [0,1,2,3,4,5,6];
+    let indices = chords.map((_, i) => i);
     if(state.mode === 'degreeToChord') indices.sort(() => Math.random() - 0.5);
+    const isAdvanced = state.chordSet === 'advanced';
 
     indices.forEach(idx => {
       const item = chords[idx];
       const btn = document.createElement('button');
       btn.className = 'choice-btn';
+      if(isAdvanced) btn.style.fontSize = '16px';
       btn.dataset.idx = idx;
-      
+
       if(state.mode === 'chordToDegree') {
         btn.innerHTML = `${item.roman}<span class="hint-sub">級數</span>`;
       } else {
         btn.innerHTML = `${formatNote(item.name)}<span class="hint-sub">和弦</span>`;
       }
-      
+
       btn.onclick = () => checkAnswer(idx, btn);
       el.grid.appendChild(btn);
     });
@@ -486,7 +531,8 @@
       btn.classList.add('wrong');
       state.score.bad++;
       state.score.streak = 0;
-      state.wrongByDegree[state.current.answerIdx]++;
+      const r = state.current.target.roman;
+      state.wrongByDegree[r] = (state.wrongByDegree[r] || 0) + 1;
 
       const correctBtn = el.grid.querySelector(`button[data-idx="${state.current.answerIdx}"]`);
       if(correctBtn) correctBtn.classList.add('correct');
@@ -531,19 +577,19 @@
   function showSummary() {
     stopTimer();
     state.roundBestStreak = Math.max(state.roundBestStreak, state.score.streak);
-    const roman = state.scaleType === 'minor' ? ROMAN_MINOR : ROMAN;
-    const maxWrong = Math.max(...state.wrongByDegree);
-    const weakIdx = maxWrong > 0 ? state.wrongByDegree.indexOf(maxWrong) : -1;
     const ok = state.score.ok, bad = state.score.bad;
     const acc = (ok + bad) ? Math.round(ok / (ok + bad) * 100) : 0;
+
+    const entries = Object.entries(state.wrongByDegree);
+    const worst = entries.length ? entries.reduce((a, b) => b[1] > a[1] ? b : a) : null;
 
     document.getElementById('summaryRound').textContent = Math.floor(state.questionCount / state.roundSize);
     document.getElementById('summaryAcc').textContent = acc + '%';
     document.getElementById('summaryOk').textContent = ok;
     document.getElementById('summaryBad').textContent = bad;
     document.getElementById('summaryStreak').textContent = state.roundBestStreak;
-    document.getElementById('summaryWeak').textContent = weakIdx >= 0
-      ? `最需加強：${roman[weakIdx]}（錯 ${maxWrong} 次）` : '全部答對！🎉';
+    document.getElementById('summaryWeak').textContent = worst
+      ? `最需加強：${worst[0]}（錯 ${worst[1]} 次）` : '全部答對！🎉';
 
     document.getElementById('summaryModal').classList.add('open');
   }
@@ -588,7 +634,7 @@
   document.addEventListener('keydown', (e) => {
     if(!state.started || state.lock) return;
     const n = parseInt(e.key, 10);
-    if(n >= 1 && n <= 7) {
+    if(n >= 1) {
       const btns = el.grid.querySelectorAll('.choice-btn');
       if(btns[n - 1]) btns[n - 1].click();
     }
@@ -597,7 +643,7 @@
   // F7: 回合摘要繼續按鈕
   document.getElementById('summaryNextBtn').addEventListener('click', () => {
     document.getElementById('summaryModal').classList.remove('open');
-    state.wrongByDegree = [0,0,0,0,0,0,0];
+    state.wrongByDegree = {};
     state.roundBestStreak = 0;
     nextQuestion();
   });
@@ -629,7 +675,7 @@
   function saveSettings() {
     localStorage.setItem('chord_settings', JSON.stringify({
       mode: state.mode, keymode: state.keymode, root: state.root,
-      scaleType: state.scaleType,
+      scaleType: state.scaleType, chordSet: state.chordSet,
       timerEnabled: state.timerEnabled, timerDuration: state.timerDuration,
       audioEnabled: state.audioEnabled,
       degreeFilter: state.degreeFilter
@@ -643,6 +689,7 @@
       if(s.keymode) state.keymode = s.keymode;
       if(s.root) state.root = s.root;
       if(s.scaleType) state.scaleType = s.scaleType;
+      if(s.chordSet) state.chordSet = s.chordSet;
       if(s.timerEnabled != null) state.timerEnabled = s.timerEnabled;
       if(s.timerDuration) state.timerDuration = s.timerDuration;
       if(s.audioEnabled != null) state.audioEnabled = s.audioEnabled;
